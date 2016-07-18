@@ -1,0 +1,15 @@
+{
+    "id": "com.athom.dru",
+    "name": {
+        "en": "DRU",
+        "nl": "DRU"
+    },
+    "version": "0.0.1",
+    "compatibility": "0.x || 1.x",
+    "author": {
+        "name": "Arthur Stemmer",
+        "email": "apstemmer@hotmail.com"
+    },
+
+    "description":"Use this app to control your DRU fireplace via Homey"
+}
