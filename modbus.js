@@ -9,42 +9,54 @@ const 	MODBUS_PORT = 502,//standard port for MODBUS
 		FIREPLACE_ACTION_REG = 40200,
 		ROOM_TEMPERATURE_REG = 40207;
 
-var unitID = 2;//default initial value
+var unitID = 2, connID = 0;//default initial value
 var ip = '';
+var client = undefined;
+var commandQueue = [];
+var currentCommand = undefined;
 
-var funcs = {
+const funcs ={
 	'light':light
 }
-var currentCommand;
-//Potentially use callback for error handling
-function connect(callback){
-	//Get IP address using mDNS
-	console.log('connecting...')
-	ip = '192.168.0.51';
-	var client = modbus.client.tcp.complete({
-		'host'				: ip,
-		'port'				: MODBUS_PORT,
-		'autoReconnect'		: true,
-		'reconnectTimeout'	: 1000,
-		'timeout'			: 5000,
-		'unitId'			: unitID
-	});
-	client.connect();
 
-	client.once('connect',function(){//once
-		console.log(`connected to port ${client.port} on ${client.host}, using unitID ${client.unitId}`);
-		return callback(null,client);
-	});
-
-	client.on('error',function(err){
-		console.log(err);
-		return callback(err,null);
-	});
+function D(msg){
+	console.log(msg);
 }
 
-function light(mode, callback){
-	var callback = callback || function(){}
+
+//Get IP address using mDNS
+console.log('connecting...');
+
+ip = '192.168.0.51';
+client = modbus.client.tcp.complete({
+	'host'				: ip,
+	'port'				: MODBUS_PORT,
+	'autoReconnect'		: false,
+	//'reconnectTimeout'	: 1000,
+	//'timeout'			: 5000,
+	'unitId'			: unitID
+});
+
+client.connect();
+
+client.once('connect',function(){//once
+	console.log(`connected to port ${client.port} on ${client.host}, using unitID ${client.unitId}`);
+	nextCommand();//start running commands
+	
+});
+
+client.on('error',function(err){
+	console.log(`CONNERR ${err}`);
+});
+
+client.on('close',function(){
+	console.log('closed connection');
+})
+
+
+function light(mode,callback){
 	var register = undefined, check = undefined;
+
 
 	if(mode == 'on'){
 		register = 103;
@@ -55,74 +67,76 @@ function light(mode, callback){
 	}else{
 		//throw error
 	}
-
-	if(this.getState() == 'connect'){
-		this.readHoldingRegisters(FIREPLACE_STATUS_REG,1).then((resp) => {
+	
+	if(client.getState() == 'connect' || client.getState() == 'ready'){
+		
+		client.readHoldingRegisters(FIREPLACE_STATUS_REG,1).then((resp) => {
 			
 			if((resp.register[0]&256) == check){//lights are off/on
-				this.writeSingleRegister(FIREPLACE_ACTION_REG,register).then(function(offresp){
-					console.log(`Turned lights ${mode}`);
-					callback(null);
+
+				client.writeSingleRegister(FIREPLACE_ACTION_REG,register).then((switchResp) => {
+					
+					
+					var interval = setInterval(() => {
+						client.readHoldingRegisters(FIREPLACE_STATUS_REG,1).then((res) => {
+						//WATCH OUT REGISTER MIGHT NOT HAVE SWITCHED IMMEDIATELY
+							if((res.register[0]&256 && mode === 'on') || (res.register[0]&256 && mode === 'off')){
+								console.log(`Turned lights ${mode}`);
+								clearInterval(interval);
+								return callback(null, true);
+							}
+						});
+					},100);	
 				});
+
 			}else{
 				console.log(`Lights are already ${mode}`);
+				return callback(null,false);
 			}
 
 		}).fail(function(err){
-
-			console.log(err);
+			console.log(`ERROR: ${err.err}`);
+			return callback(err.message);
+			
 
 		});
 
 	}
 }
 
+function addToCommandQueue( commandId, args, callback ) {
+	var callback = callback || function(){};
 
-function addCommand(cmd, args, callback){
-	var callback = callback || function(){}
-	
-	queue.push({
-		'command':cmd,
-		'args':args,
-		'callback':callback
-	});
+    commandQueue.push({
+        commandId: commandId,
+        args: args,
+        callback: callback
+    });
 
-	nextCommand();
+    if(client.getState() == 'connected'){
+    	nextCommand();
+    }
+    
 }
 
-function nextCommand(){
-	
-	if(typeof currentCommand !== 'undefined') {
-		console.log('No task defined');
-		return
-	};
-	if( queue.length < 1 ){
-		console.log('No more tasks');
-		return
-	};
-
-	
-	currentCommand = queue.shift()
-	
-	connect((e,client) => {
-
-		if(e){
-			console.log(e);
-			return
-		}
-		
-		//potentially turn into apply if more arguments are required
-		funcs[currentCommand.command].call(client, currentCommand.args,(err, result) => {
-			console.log(currentCommand.callback);
-			
-			nextCommand();
-			client.close();
-		});
-
-	});
-
+function nextCommand() {
+    
+    if( typeof currentCommand !== 'undefined' ) return;
+    if( commandQueue.length < 1 ) return;
+    
+    currentCommand = commandQueue.shift();
+    
+    sendCommand( currentCommand.commandId, currentCommand.args, ( err, result ) => {
+        currentCommand.callback( err, result );
+        currentCommand = undefined;
+        nextCommand();
+    });
+    
 }
 
-module.exports = {
-	'addCommand': addCommand
+function sendCommand(commandId, args, callback){
+	
+	funcs[commandId].call(client,args,callback);
 }
+
+module.exports.addToCommandQueue = addToCommandQueue;
