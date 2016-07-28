@@ -32,6 +32,7 @@ const funcs = {
 	getTemp: getTemp,
 	getTest: getTest,
 	setTest: setTest,
+	setMain:setMain
 };
 
 // Get IP address using mDNS
@@ -68,10 +69,23 @@ browser.on('update', (data) => {
 				console.log('error in fault checking');
 			}
 			else if(fault){
+				client.readHoldingRegisters(FIREPLACE_STATUS_REG,1).then((status)=>{
+					console.log(status);
+					if(status.register[0]&64){
+						client.writeSingleRegister(FIREPLACE_ACTION_REG,2).then((res)=>{
+							client.readHoldingRegisters(FIREPLACE_STATUS_REG,1).then((stat)=>{
+								console.log(stat, res, status);
+							})
+						});
+					}else{
+						console.log('did not encounter');
+					}
+				});
+				
 				console.log(fault);
 			}else if(!fault){
 				console.log(`connected to port ${client.port} on ${client.host}, using unitID ${client.unitId}`);
-				//nextCommand(); // start running commands
+				nextCommand(); // start running commands
 			}
 		});
 	});
@@ -128,7 +142,7 @@ function nextCommand() {
 	}
 
 	//console.log(currentCommand.args.toString(), cb.toString());
-
+	console.log(currentCommand);
 	funcs[currentCommand.commandId].call(client, currentCommand.args, cb);
 }
 // // END QUEUEING FUNCTIONS ////
@@ -261,6 +275,7 @@ function setTest(mode, callback) {
 }
 
 function setMain(mode,callback){
+	console.log('setting main');
 	client.readHoldingRegisters(FIREPLACE_STATUS_REG,1).then((resp)=>{
 		if(resp.register){
 			const status = resp.register[0];
@@ -297,7 +312,7 @@ function setMain(mode,callback){
 
 						client.readHoldingRegisters(FIREPLACE_STATUS_REG, 1).then((check) => {
 							// WATCH OUT REGISTER MIGHT NOT HAVE SWITCHED IMMEDIATELY
-							if((check.register[0] & 4) === 4){//fireplace was turned on 
+							if((check.register[0] & 4) === 0){//fireplace was turned off 
 								callback(null,false);
 							}
 						});
@@ -305,7 +320,9 @@ function setMain(mode,callback){
 					}, 50);
 				});
 			}
-		}	
+		}
+		console.log('failed to set main on')
+		callback(new Error('could not turn main on'));	
 	})
 }
 
@@ -313,6 +330,8 @@ function setMain(mode,callback){
 
 function checkFault(callback){
 	client.readHoldingRegisters(FIREPLACE_STATUS_REG,1).then((check)=>{
+		console.log(check);
+
 		if(check.register[0] & 1)
 		{
 			console.log("Fault detected...")
@@ -320,15 +339,16 @@ function checkFault(callback){
 				callback(null,fault.register[0]);
 			});
 		}else if((check.register[0] & 1)===0){
-			callback(null,false);
+			callback(null,false);//no fault detected
 		}else{
 			console.log('error with faultchecking');
 			callback(new Error('could not retrieve status register'));
 		}
 
+	},(fail)=>{
+		console.log(fail);
 	});
 }
-// To implement status function
 
 module.exports.add = add;
 

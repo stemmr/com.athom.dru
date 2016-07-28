@@ -1,7 +1,7 @@
 'use strict';
 const fp = require('./modbus.js');
 
-//fp.add('setMain', 'on');
+fp.add('setMain', 'off');
 /*
 setInterval(() => {
 	//fp.add('setLight','on');
