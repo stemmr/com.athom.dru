@@ -11,5 +11,93 @@
         "email": "apstemmer@hotmail.com"
     },
 
-    "description":"Use this app to control your DRU fireplace via Homey"
+    "description":"Use this app to control your DRU fireplace via Homey",
+    "flow" : {
+        "conditions":[
+            {
+                "id":"light_status",
+                "title":{
+                    "en":"are the lights !{{on|off}}?",
+                    "nl":"zijn de lichten !{{aan|uit}}?"
+                }
+            },
+            {
+                "id":"room_temp",
+                "title":{
+                    "en":"Room temperature is:",
+                    "nl":"De temperatuur is:"
+                },
+                "args":[
+                    {
+                        "name":"temp_rel",
+                        "type":"dropdown",
+                        "values":[
+                            {
+                                "id":"larger",
+                                "label":{
+                                    "en":"larger than",
+                                    "nl":"groter dan"
+                                }
+                            },
+                            {
+                                "id":"equal",
+                                "label":{
+                                    "en":"equal to",
+                                    "nl":"gelijk aan"
+                                }
+                            },
+                            {
+                                "id":"smaller",
+                                "label":{
+                                    "en":"smaller than",
+                                    "nl":"kleiner dan"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "name":"temp_set",
+                        "type":"range",
+                        "min":-20,
+                        "max":40,
+                        "step":0.5,
+                        "label":"°C",
+                        "labelMultiplier":1,
+                        "labelDecimals":1
+                    }
+                ]
+            }
+        ],
+        "actions":[
+            {
+                "id":"light_switch",
+                "title": {
+                    "en": "turn light",
+                    "nl": "doe licht"
+                },
+                "args":[
+                    {
+                        "name":"toggle",
+                        "type":"dropdown",
+                        "values":[
+                            {
+                                "id":"on",
+                                "label":{
+                                    "en":"on",
+                                    "nl":"aan"
+                                }
+                            },
+                            {
+                                "id":"off",
+                                "label":{
+                                    "en":"off",
+                                    "nl":"uit"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
 }
