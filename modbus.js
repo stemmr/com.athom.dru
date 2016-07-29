@@ -2,8 +2,7 @@
 const modbus = require('jsmodbus');
 const mdns = require('mdns-js');
 const faultHandler = require('./faultHandler.js')
-
-
+const UDPlistener = require('./UDPlistener.js')
 const queue = [];
 
 const MODBUS_PORT = 502; // standard port for MODBUS
@@ -38,10 +37,19 @@ const funcs = {
 // Get IP address using mDNS
 console.log('connecting...');
 
+let listenInterval = setInterval(()=>{
+	if(client === undefined && UDPlistener.ip !== undefined)
+	{
+		createClient(UDPlistener.ip);
+	}else if(client.host !== UDPlistener.ip){
+		createClient(UDPlistener.ip);
+	}
+},2000);
 
 const browser = mdns.createBrowser('_modbus._tcp.local');
 
 browser.on('ready', () => {
+	console.log('Discovering IP with mDNS');
 	browser.discover();
 });
 
@@ -50,54 +58,13 @@ browser.on('update', (data) => {
 	console.log('address:', data.addresses[0]);
 
 	const ip = data.addresses[0];
-	client = modbus.client.tcp.complete({
-		host: ip,
-		port: MODBUS_PORT,
-		autoReconnect: false,
-		// 'reconnectTimeout'	: 1000,
-		// 'timeout'			: 5000,
-		unitId: unitID,
-	});
-
-	client.connect();
-
-	client.once('connect', () => { // once
-		console.log('connected');
-		checkFault((err,fault)=>{
-			console.log(err,fault);
-			if(err){ 
-				console.log('error in fault checking');
-			}
-			else if(fault){
-				client.readHoldingRegisters(FIREPLACE_STATUS_REG,1).then((status)=>{
-					console.log(status);
-					if(status.register[0]&64){
-						client.writeSingleRegister(FIREPLACE_ACTION_REG,2).then((res)=>{
-							client.readHoldingRegisters(FIREPLACE_STATUS_REG,1).then((stat)=>{
-								console.log(stat, res, status);
-							})
-						});
-					}else{
-						console.log('did not encounter');
-					}
-				});
-				
-				console.log(fault);
-			}else if(!fault){
-				console.log(`connected to port ${client.port} on ${client.host}, using unitID ${client.unitId}`);
-				nextCommand(); // start running commands
-			}
-		});
-	});
-
-	client.on('error', (err) => {
-		console.log(`CONNERR ${err}`);
-	});
-
-	client.on('close', () => {
-		console.log('closed connection');
-	});
+	clearInterval(listenInterval);
+	createClient(ip);
 });
+
+browser.on('error',function(){
+	console.log('err');
+})
 
 
 function reset() {}
@@ -348,6 +315,68 @@ function checkFault(callback){
 	},(fail)=>{
 		console.log(fail);
 	});
+}
+
+
+//CLIENT FACTORY FUNCTION
+function createClient(ip){
+	//console.log(`client address b4 conn: ${client.host}`)
+	
+
+	console.log(typeof client === 'undefined');
+	if(typeof client === 'undefined' || client.host !== ip){
+
+		client = modbus.client.tcp.complete({
+		host: ip,
+		port: MODBUS_PORT,
+		autoReconnect: true,
+		reconnectTimeout	: 1000,
+		timeout			: 5000,
+		unitId: unitID,
+		});
+		client.connect();
+		console.log(`client address: ${client.host}`)
+	}
+	
+
+	client.once('connect', () => { // once
+		console.log('connected');
+		checkFault((err,fault)=>{
+			console.log(err,fault);
+			if(err){ 
+				console.log('error in fault checking');
+			}
+			else if(fault){
+				client.readHoldingRegisters(FIREPLACE_STATUS_REG,1).then((status)=>{
+					console.log(status);
+					if(status.register[0]&64){
+						client.writeSingleRegister(FIREPLACE_ACTION_REG,2).then((res)=>{
+							client.readHoldingRegisters(FIREPLACE_STATUS_REG,1).then((stat)=>{
+								console.log(stat, res, status);
+							})
+						});
+					}else{
+						console.log('did not encounter');
+					}
+				});
+				
+				console.log(fault);
+			}else if(!fault){
+				console.log(`connected to port ${client.port} on ${client.host}, using unitID ${client.unitId}`);
+				nextCommand(); // start running commands
+			}
+		});
+	});
+
+	client.on('error', (err) => {
+		console.log(`CONNERR ${err}`);
+	});
+
+	client.on('close', () => {
+		console.log('closed connection');
+	});
+
+	return client;
 }
 
 module.exports.add = add;
