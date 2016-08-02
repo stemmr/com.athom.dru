@@ -67,8 +67,26 @@ browser.on('error',function(){
 })
 
 
-function reset() {}
-
+function reset(callback){
+	console.log('resetting...')
+	client.readHoldingRegisters(FIREPLACE_STATUS_REG,1).then((status)=>{
+		console.log('fireplace can be reset');
+		//Fireplace can be reset
+		if((status.register[0]&64)){
+			console.log('fireplace can be reset');
+			client.writeSingleRegister(FIREPLACE_ACTION_REG,1000).then((resp)=>{
+					client.readHoldingRegisters(FIREPLACE_STATUS_REG,1).then((stat)=>{
+						console.log('reset',stat.register[0]);
+						return callback(null);
+					});
+			});
+		}
+	},(fail)=>{
+		console.log(fail)
+		return callback(fail);
+	});
+}
+module.exports.reset = reset;
 
 // // BEGIN QUEUEING FUNCTIONS ////
 function add(commandId, args, callback) {
@@ -107,9 +125,6 @@ function nextCommand() {
 	if (typeof currentCommand.args === 'function' || typeof currentCommand.args === 'undefined') {
 		currentCommand.args = cb;
 	}
-
-	//console.log(currentCommand.args.toString(), cb.toString());
-	console.log(currentCommand);
 	funcs[currentCommand.commandId].call(client, currentCommand.args, cb);
 }
 // // END QUEUEING FUNCTIONS ////
@@ -212,7 +227,6 @@ function setLight(mode, callback) {
 
 function setResetTimeout(mins, callback) {
 	client.readHoldingRegisters(COMM_TIMEOUT_REG, 1).then((res) => {
-		console.log(res);
 		client.writeSingleRegister(COMM_TIMEOUT_REG, mins)
 			.then((resp) => callback(null, true))
 			.fail((err) => {
@@ -242,54 +256,59 @@ function setTest(mode, callback) {
 }
 
 function setMain(mode,callback){
+	if(mode === 'on'){
+		var regset = 101;
+	}
+	else if(mode === 'off'){
+		var regset = 3;
+		client.writeSingleRegister(FIREPLACE_ACTION_REG,3).then((confirm) =>{
+			console.log('fire is off');
+			return callback(null, true);
+		});
+
+	}
 	console.log('setting main');
 	client.readHoldingRegisters(FIREPLACE_STATUS_REG,1).then((resp)=>{
 		if(resp.register){
 			const status = resp.register[0];
-			if( mode === 'on' && (status & 32768) === 0 && (status & 4) === 0){//ignition is allowed and main burner is off 
-				client.writeSingleRegister(FIREPLACE_ACTION_REG,101).then((confirm) =>{
+			if( (mode === 'on' && (status & 32768) === 0 && !(status & 4)) || ( mode === 'off' && (status & 4))){//ignition is allowed and main burner is off 
+				client.writeSingleRegister(FIREPLACE_ACTION_REG,regset).then((confirm) =>{
+					console.log(`turned FP ${mode}`);
+					console.log(Date.now());
 
-					const interval = setInterval(() => {
+					var timt = setTimeout(()=>{
+						clearInterval(interval);
+						console.log('timed out in setMain');
+						return callback(new Error('timed out!'))
+					},10000);//5 seconds, does create 100 intervals
 
-						setTimeout(()=>{
-							clearInterval(interval);
-						},TIMEOUT);//5 seconds, does create 100 intervals
-
+					var interval = setInterval(() => {
+						
 						client.readHoldingRegisters(FIREPLACE_STATUS_REG, 1).then((check) => {
+							console.log('checking that FP is on');
 							// WATCH OUT REGISTER MIGHT NOT HAVE SWITCHED IMMEDIATELY
-							if((check.register[0] & 4) === 4){//fireplace was turned on 
-								callback(null,true);
+							if(((check.register[0] & 4) === 4 && mode === 'on') || (!(check.register[0] & 4) && mode==='off')){//fireplace was turned on 
+								console.log(`confirmed FP is ${mode}`);
+								clearInterval(interval);
+								clearTimeout(timt);
+								return callback(null, true);
 							}
 						});
 
-					}, 50);
+					}, 80);
 
 				});
 
 				//check if fire is on and return cb
 			}
-			else if( mode === 'off' && (status & 4) === 4){
-				client.writeSingleRegister(FIREPLACE_ACTION_REG,3).then((confirm) =>{
-
-					const interval = setInterval(() => {
-
-						setTimeout(()=>{
-							clearInterval(interval);
-						},TIMEOUT);//5 seconds, does create 100 intervals
-
-						client.readHoldingRegisters(FIREPLACE_STATUS_REG, 1).then((check) => {
-							// WATCH OUT REGISTER MIGHT NOT HAVE SWITCHED IMMEDIATELY
-							if((check.register[0] & 4) === 0){//fireplace was turned off 
-								callback(null,false);
-							}
-						});
-
-					}, 50);
-				});
+			else if( (mode === 'on' && (status & 4) === 4) || (mode === 'off' && (status & 4) === 0)){
+				console.log(`fireplace was already ${mode}`);
+				return callback(null, false)//no error, action unsuccessful(fireplace was already in state)
 			}
+		}else{
+			console.log(`failed to set main ${mode}`)
+			callback(new Error('could not turn main on'));	
 		}
-		console.log('failed to set main on')
-		callback(new Error('could not turn main on'));	
 	})
 }
 
@@ -297,7 +316,6 @@ function setMain(mode,callback){
 
 function checkFault(callback){
 	client.readHoldingRegisters(FIREPLACE_STATUS_REG,1).then((check)=>{
-		console.log(check);
 
 		if(check.register[0] & 1)
 		{
@@ -314,16 +332,13 @@ function checkFault(callback){
 
 	},(fail)=>{
 		console.log(fail);
+		return callback(fail);
 	});
 }
 
 
 //CLIENT FACTORY FUNCTION
 function createClient(ip){
-	//console.log(`client address b4 conn: ${client.host}`)
-	
-
-	console.log(typeof client === 'undefined');
 	if(typeof client === 'undefined' || client.host !== ip){
 
 		client = modbus.client.tcp.complete({
@@ -335,32 +350,17 @@ function createClient(ip){
 		unitId: unitID,
 		});
 		client.connect();
-		console.log(`client address: ${client.host}`)
 	}
 	
 
 	client.once('connect', () => { // once
-		console.log('connected');
 		checkFault((err,fault)=>{
-			console.log(err,fault);
 			if(err){ 
 				console.log('error in fault checking');
 			}
 			else if(fault){
-				client.readHoldingRegisters(FIREPLACE_STATUS_REG,1).then((status)=>{
-					console.log(status);
-					if(status.register[0]&64){
-						client.writeSingleRegister(FIREPLACE_ACTION_REG,2).then((res)=>{
-							client.readHoldingRegisters(FIREPLACE_STATUS_REG,1).then((stat)=>{
-								console.log(stat, res, status);
-							})
-						});
-					}else{
-						console.log('did not encounter');
-					}
-				});
-				
-				console.log(fault);
+				//console.log(faultHandler[fault]);
+				faultHandler[fault]();//throw fault to faulthandler
 			}else if(!fault){
 				console.log(`connected to port ${client.port} on ${client.host}, using unitID ${client.unitId}`);
 				nextCommand(); // start running commands
