@@ -99,5 +99,32 @@
                 ]
             }
         ]
+    },
+    "drivers":[
+        {
+            "id":"dru",
+            "name":{
+                "en":"Dru driver",
+                "nl":"Dru driver"
+            },
+            "class":"other",
+            "pair":[
+                {
+                    "id":"start"
+                }
+            ],
+            "capabilities":["light"]
+        }
+    ],
+    "capabilities":{
+        "light":{
+            "type":"boolean",
+            "title":{
+                "en":"switch the lights!",
+                "nl":"zet lampen aan/uit"
+            },
+            "getable":true,
+            "setable":true
+        }
     }
 }

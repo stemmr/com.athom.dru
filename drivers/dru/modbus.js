@@ -35,7 +35,7 @@ const funcs = {
 };
 
 // Get IP address using mDNS
-console.log('connecting...');
+console.log('connecting..');
 
 let listenInterval = setInterval(()=>{
 	if(client === undefined && UDPlistener.ip !== undefined)

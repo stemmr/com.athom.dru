@@ -1,0 +1,18 @@
+<head>
+</head>
+
+<body>
+works
+	<script>
+	console.log(Homey);
+	Homey.on('conn',function(device_data, callback){
+		callback();
+		Homey.addDevice(device_data, function( err, result ){
+		    if( err ) return console.error(err);
+		    console.log(result);
+		    Homey.done();
+		})
+	});
+	
+	</script>
+</body>

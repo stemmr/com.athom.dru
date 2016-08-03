@@ -1,4 +1,4 @@
-const fp = require('./modbus.js')
+//const fp = require('./modbus.js')
 
 module.exports = {
 	'14': ()=>{
