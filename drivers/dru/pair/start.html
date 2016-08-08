@@ -1,18 +1,36 @@
 <head>
+<link rel="stylesheet" type="text/css" href="main.css">
 </head>
 
 <body>
-works
+
+<div id="center">
+	<img src="images/spinner.gif" id="centimg">
+</div>
+
+<div id = "feedback">
+Here is the filler text: response from the backend providing errors and a description of the device you just added
+</div>
+
+
 	<script>
-	console.log(Homey);
-	Homey.on('conn',function(device_data, callback){
-		callback();
+	var central = document.getElementById('centimg');
+	var feedback = document.getElementById('feedback');
+	Homey.on('conn',function(device_data, callback){//returns false if failed to connect
+		console.log('device_data',device_data);
+		central.src = "images/checkMark.svg";
 		Homey.addDevice(device_data, function( err, result ){
-		    if( err ) return console.error(err);
-		    console.log(result);
+		    if( err ) return console.error('err',err);
+		    console.log('res',result);
 		    Homey.done();
-		})
+		});
 	});
-	
+
+	Homey.on('error', function(err, callback){
+		central.src = "images/crossMark.svg";
+		feedback.innerHTML = err.message;
+		console.log(err.message);
+		callback(null,true);
+	});
 	</script>
 </body>

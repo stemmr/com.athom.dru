@@ -1,5 +1,5 @@
 {
-	
-	"esversio": 6
+  "esversion": 6,
+   "devel": true,
+   "node": true
 }
-

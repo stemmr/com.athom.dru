@@ -106,11 +106,20 @@
             "name":{
                 "en":"Dru driver",
                 "nl":"Dru driver"
+
             },
             "class":"other",
             "pair":[
                 {
-                    "id":"start"
+                    "id":"list_my_devices",
+                    "template":"list_devices",
+                    "navigation": {
+                        "next": "add_my_devices"
+                    }
+                },
+                {
+                    "id": "add_my_devices",
+                    "template": "add_devices"
                 }
             ],
             "capabilities":["light"]
