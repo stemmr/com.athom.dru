@@ -1,13 +1,12 @@
 "use strict";
 /*
-*	Creates an array of fireplace IPs
-*
+*	Returns IP of gateway, only 1 IP per gateway(likely 1 per homey)
 */
 const dgram = require('dgram');
 const server = dgram.createSocket('udp4');
 
 const EventEmitter = require('events');
-const udp = new EventEmitter();
+var udp = new EventEmitter();
 
 module.exports = udp;
 
@@ -24,8 +23,8 @@ server.on('message', (msg, rinfo) => {
 	if(msg.toString().indexOf('HWBRDG-DF') !== -1 ){
 
 		if(ip.indexOf(rinfo.address) === -1){
-			ip.push(rinfo.address);
-			udp.emit('ip',null,ip);
+			udp.ip = rinfo.address;
+			udp.emit('ip',null,rinfo.address);
 		}
 	}
 });
@@ -37,6 +36,6 @@ server.on('listening', () => {
 
 server.bind(35353);
 
-// udp.on('ip',(ip)=>{
+// udp.on('ip',(err,ip)=>{
 // 	console.log('ip found!', ip);
 // });

@@ -4,7 +4,7 @@ var modbus = require('jsmodbus');
 if(typeof client === 'undefined' || client.host !== ip){
 
   client = modbus.client.tcp.complete({
-  host: ip,
+  host: '192.168.0.51',
   port: 502,
   autoReconnect: true,
   reconnectTimeout	: 1000,
@@ -18,12 +18,8 @@ if(typeof client === 'undefined' || client.host !== ip){
 client.once('connect', () => { // once
 
       console.log(`connected to port ${client.port} on ${client.host}, using unitID ${client.unitId}`);
-      console.log(client);
-      client.readHoldingRegisters(40002,2).then((res)=>{
-        console.log(res);
-      },(fail)=>{
-        console.log('fail',fail);
-      });
+      console.log(client.queueRequest.toString());
+
       //nextCommand(); // start running commands
 
   });
@@ -35,7 +31,3 @@ client.on('error', (err) => {
 client.on('close', () => {
   console.log('closed connection');
 });
-
-module.exports = (unitId) => {
-  
-}
