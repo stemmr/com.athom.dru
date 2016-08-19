@@ -117,13 +117,32 @@ module.exports = {
   capabilities: {
     light:{
       get:function(device_data, callback){
-        console.log(device_data);
+        console.log(devices);
         let fireplace = devices[device_data.unitId];
         fireplace.connect();
         fireplace.once('connect',()=>{
 
+          fireplace.readHoldingRegisters(FIREPLACE_STATUS_REG, 1).then((resp) => {
+            fireplace.close().on('close',()=>{
+              const reg = resp.register[0];
+
+          		if (reg & 256) {
+          			return callback(null, 'on');
+          		} else if ((reg & 256) === 0) {
+          			return callback(null, 'off');
+          		}
+
+          		console.log('else');
+          		return callback(new Error('could not get status', null));
+
+            });
+        	}, (err) => {
+        		console.log('in getting light status: ',err);
+            fireplace.close().on('close',()=>{
+                return callback(new Error('failed status'), null);
+            });
+        	});
         });
-        callback(null,true);
       },
       set:function(device_data, args, callback){
         let fireplace = devices[device_data.unitId];

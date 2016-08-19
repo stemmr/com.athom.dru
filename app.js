@@ -2,28 +2,28 @@
 function init() {
 
   Homey.manager('flow').on('action.light_switch', (callback, args)=>{
-    console.log(args)
+    console.log(args);
     Homey.manager('drivers').getDriver('dru').capabilities.light.set(args.device,args.toggle,(err,status)=>{
         if (err) return callback(err);
         console.log(`setting ${args.toggle}!`, status);
 	      callback(null,status);
     });
   });
-/*
-	Homey.manager('flow').on('condition.light_status',(callback) =>{
-		console.log('checking status of lights...');
-		fp.add('getLight', (err, res)=>{
-			console.log('got light status' + res + err);
-			if(err) return callback(err,null);
 
-			if(res){
-				return callback(null, true);
-			}else if(res === false){
-				return callback(null, false);
-			}
-		});
+	Homey.manager('flow').on('condition.light_status',(callback, args) =>{
+		console.log(args);
+		Homey.manager('drivers').getDriver('dru').capabilities.light.get(args.device,(err,status)=>{
+        if(err){
+          return callback(err);
+        }else if(status === 'on'){
+            return callback(null, true);
+        }else if(status === 'off'){
+            return callback(null, false);
+        }
+
+    });
 	});
-
+/*
 	Homey.manager('flow').on('condition.room_temp',(callback, args)=>{
 		console.log(args.temp_rel === 'larger');
 		fp.add('getTemp',(err,temp)=>{
