@@ -8,7 +8,7 @@ module.exports = {
 			checkFault((err2)=>{
 				if(err2) return;
 				fp.nextCommand();
-			})
+			});
 		});
 
 	},
@@ -16,4 +16,4 @@ module.exports = {
 	'8': ()=>{
 		console.log('Connection fault detected.(FP is not connected)');
 	}
-}
+};

@@ -1,64 +1,15 @@
 'use strict';
-//const fp = require('./modbus.js');
-
-//fp.add('setLight','on');
-//fp.add('setLight','off');
-
-/*
-setInterval(() => {
-	//fp.add('setLight','on');
-	fp.add('getTest');
-}, 500);
-/*
-setTimeout(() => {
-	fp.add('setTest', 'off');
-}, 20000);
-
-
-/* fp.add('setTest','on',function(){
-	setTimeout(()=>{
-		fp.add('setTest','off');
-	},5000);
-});*/
-
-// setTimeout(,2000);
-
-// fp.add('setLight','on');
-// fp.add('setLight','off');
-
 function init() {
-	
-	/*
-	fp.add('setLight','off');
-	//fp.add('setLight','off');
-	setInterval(()=>{
-		fp.add('getTest',(err,res) =>{
-			///console.log(res);
-		});
-	},2500);
 
-
-	Homey.manager('flow').on('action.light_switch', (callback, args)=>{
-		if(args.toggle === 'on'){
-
-			fp.add('setLight','on',(err,result)=>{
-				if(err) return callback(err);
-				callback(null,result);
-			});
-
-		}else if(args.toggle === 'off'){
-
-			fp.add('setLight','off',(err,result)=>{
-				if(err) return callback(err);
-				callback(null,result);
-			});
-
-		}else{
-
-			callback(new Error('neither on nor off'));
-		}
-	});
-
+  Homey.manager('flow').on('action.light_switch', (callback, args)=>{
+    console.log(args)
+    Homey.manager('drivers').getDriver('dru').capabilities.light.set(args.device,args.toggle,(err,status)=>{
+        if (err) return callback(err);
+        console.log(`setting ${args.toggle}!`, status);
+	      callback(null,status);
+    });
+  });
+/*
 	Homey.manager('flow').on('condition.light_status',(callback) =>{
 		console.log('checking status of lights...');
 		fp.add('getLight', (err, res)=>{
@@ -77,7 +28,7 @@ function init() {
 		console.log(args.temp_rel === 'larger');
 		fp.add('getTemp',(err,temp)=>{
 			if(err){
-				consoel.log(err);
+				console.log(err);
 				return callback(err);
 			}
 			if(args.temp_rel === 'larger' && args.temp_set < temp){
@@ -99,9 +50,8 @@ function init() {
 			}
 		});
 	});
-*/
 
+*/
 }
 
 module.exports.init = init;
-

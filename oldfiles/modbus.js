@@ -1,8 +1,8 @@
 'use strict';
 const modbus = require('jsmodbus');
 const mdns = require('mdns-js');
-const faultHandler = require('./faultHandler.js')
-const UDPlistener = require('./UDPlistener.js')
+const faultHandler = require('./faultHandler.js');
+const UDPlistener = require('./UDPlistener.js');
 const queue = [];
 
 const MODBUS_PORT = 502; // standard port for MODBUS
@@ -64,11 +64,11 @@ browser.on('update', (data) => {
 
 browser.on('error',function(){
 	console.log('err');
-})
+});
 
 
 function reset(callback){
-	console.log('resetting...')
+	console.log('resetting...');
 	client.readHoldingRegisters(FIREPLACE_STATUS_REG,1).then((status)=>{
 		console.log('fireplace can be reset');
 		//Fireplace can be reset
@@ -82,7 +82,7 @@ function reset(callback){
 			});
 		}
 	},(fail)=>{
-		console.log(fail)
+		console.log(fail);
 		return callback(fail);
 	});
 }
@@ -109,7 +109,7 @@ function add(commandId, args, callback) {
 }
 
 function nextCommand() {
-	
+
 	if (typeof currentCommand !== 'undefined') return;
 	if (commandQueue.length < 1) return;
 
@@ -120,7 +120,7 @@ function nextCommand() {
 		currentCommand.callback(err, result);
 		currentCommand = undefined;
 		nextCommand();
-	};
+	}
 
 	if (typeof currentCommand.args === 'function' || typeof currentCommand.args === 'undefined') {
 		currentCommand.args = cb;
@@ -162,7 +162,7 @@ function getTemp(callback) {
 }
 
 function getTest(callback) {
-	
+
 	client.readHoldingRegisters(40203, 1).then((resp) => {
 		console.log(resp.register[0], new Date().getTime());
 		return callback(null, true);
@@ -176,8 +176,8 @@ function getTest(callback) {
 
 // // BEGIN SETTERS ////
 function setLight(mode, callback) {
-	let register = undefined;
-	let	check = undefined;
+	let register;
+	let	check;
 
 
 	if (mode === 'on') {
@@ -271,7 +271,7 @@ function setMain(mode,callback){
 	client.readHoldingRegisters(FIREPLACE_STATUS_REG,1).then((resp)=>{
 		if(resp.register){
 			const status = resp.register[0];
-			if( (mode === 'on' && (status & 32768) === 0 && !(status & 4)) || ( mode === 'off' && (status & 4))){//ignition is allowed and main burner is off 
+			if( (mode === 'on' && (status & 32768) === 0 && !(status & 4)) || ( mode === 'off' && (status & 4))){//ignition is allowed and main burner is off
 				client.writeSingleRegister(FIREPLACE_ACTION_REG,regset).then((confirm) =>{
 					console.log(`turned FP ${mode}`);
 					console.log(Date.now());
@@ -279,15 +279,15 @@ function setMain(mode,callback){
 					var timt = setTimeout(()=>{
 						clearInterval(interval);
 						console.log('timed out in setMain');
-						return callback(new Error('timed out!'))
+						return callback(new Error('timed out!'));
 					},10000);//5 seconds, does create 100 intervals
 
 					var interval = setInterval(() => {
-						
+
 						client.readHoldingRegisters(FIREPLACE_STATUS_REG, 1).then((check) => {
 							console.log('checking that FP is on');
 							// WATCH OUT REGISTER MIGHT NOT HAVE SWITCHED IMMEDIATELY
-							if(((check.register[0] & 4) === 4 && mode === 'on') || (!(check.register[0] & 4) && mode==='off')){//fireplace was turned on 
+							if(((check.register[0] & 4) === 4 && mode === 'on') || (!(check.register[0] & 4) && mode==='off')){//fireplace was turned on
 								console.log(`confirmed FP is ${mode}`);
 								clearInterval(interval);
 								clearTimeout(timt);
@@ -303,13 +303,13 @@ function setMain(mode,callback){
 			}
 			else if( (mode === 'on' && (status & 4) === 4) || (mode === 'off' && (status & 4) === 0)){
 				console.log(`fireplace was already ${mode}`);
-				return callback(null, false)//no error, action unsuccessful(fireplace was already in state)
+				return callback(null, false);//no error, action unsuccessful(fireplace was already in state)
 			}
 		}else{
-			console.log(`failed to set main ${mode}`)
-			callback(new Error('could not turn main on'));	
+			console.log(`failed to set main ${mode}`);
+			callback(new Error('could not turn main on'));
 		}
-	})
+	});
 }
 
 // // END SETTERS ////
@@ -319,7 +319,7 @@ function checkFault(callback){
 
 		if(check.register[0] & 1)
 		{
-			console.log("Fault detected...")
+			console.log("Fault detected...");
 			client.readHoldingRegisters(FAULT_DETAIL_REG,1).then((fault)=>{
 				callback(null,fault.register[0]);
 			});
@@ -351,11 +351,11 @@ function createClient(ip){
 		});
 		client.connect();
 	}
-	
+
 
 	client.once('connect', () => { // once
 		checkFault((err,fault)=>{
-			if(err){ 
+			if(err){
 				console.log('error in fault checking');
 			}
 			else if(fault){
@@ -380,4 +380,3 @@ function createClient(ip){
 }
 
 module.exports.add = add;
-

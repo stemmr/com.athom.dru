@@ -1,33 +1,30 @@
-
+"use strict";
 var modbus = require('jsmodbus');
 
-if(typeof client === 'undefined' || client.host !== ip){
-
-  client = modbus.client.tcp.complete({
-  host: '192.168.0.51',
-  port: 502,
-  autoReconnect: true,
-  reconnectTimeout	: 1000,
-  timeout			: 5000,
-  unitId: 2,
-  });
-  client.connect();
-}
-
-
-client.once('connect', () => { // once
-
-      console.log(`connected to port ${client.port} on ${client.host}, using unitID ${client.unitId}`);
-      console.log(client.queueRequest.toString());
-
-      //nextCommand(); // start running commands
-
-  });
-
-client.on('error', (err) => {
-  console.log(`CONNERR ${err}`);
+var ipPromise = new Promise(function(resolve, reject) {
+  setTimeout(resolve, 2000);
 });
 
-client.on('close', () => {
-  console.log('closed connection');
+var gateway = ipPromise.then((ip)=>{
+
+    let client = modbus.client.tcp.complete({
+      host: ip,
+      port: 502,
+      autoReconnect: false,
+      reconnectTimeout: 1000,
+      timeout: 5000,
+      unitId: 1
+    });
+    client.on('close', function(){
+              console.log('closed gateway connection');
+            })
+          .once('error',(err)=>{
+            console.log('gw error', err);
+          });
+    return client;
 });
+
+gateway.then((gw)=>{
+  console.log(gw);
+});
+console.log(gateway);

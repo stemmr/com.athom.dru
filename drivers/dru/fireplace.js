@@ -4,17 +4,16 @@
 var modbus = require('jsmodbus');
 var udp = require('./UDPlistener.js');//udp.on('ip',callback is list of ip addresses
 
-var client;
 var ip;
 
 udp.on('ip',(err,ips)=>{
   ip = ips;
-  //console.log(ips);
+  console.log(ips);
 });
 
-module.exports = function(unitId,callback){
-  client = modbus.client.tcp.complete({
-    host: ip,
+var runClient = module.exports = function(unitId,callback){
+  var client = modbus.client.tcp.complete({
+    host: '192.168.0.51',
     port: 502,
     autoReconnect: false,
     reconnectTimeout: 1000,
@@ -24,24 +23,48 @@ module.exports = function(unitId,callback){
 
   client.connect();
 
-  client.once('connect', () => { // once
-
-        console.log(`connected to port ${client.port} on ${client.host}, using unitID ${client.unitId}`);
-        callback(null, client);
-        //nextCommand(); // start running commands
-
-    });
-
   client.on('error', (err) => {
     callback(err);
     console.log(`CONNERR ${err}`);
   });
 
-  client.on('close', () => {
+  client.on('close', (data) => {
     console.log('closed connection');
   });
-
+  //console.log(callback.toString());
+  //var p = callback.bind(client);
+  client.once('connect',()=>{
+    callback(client);
+      return client;
+  });
 };
+
+var fp = runClient(1,function(cli){
+  console.log(cli);
+  this.readHoldingRegisters(40201,8).then((data)=>{
+    console.log('list of unitIds found ',data.register);
+    var deviceList = [];
+    data.register.forEach((elem)=>{
+      if(elem){//register is 0(falsey) if not bound
+        var dev = {
+          data:{
+            unitId:elem
+          },
+          name: 'Fireplace '+(elem-1)
+        };
+        deviceList.push(dev);
+      }
+    });
+    callback(null, deviceList);
+  }).fail((err)=>{
+    console.log(`could not run client ${err}`);
+  }).done(()=>{
+    this.close();
+  });
+
+});
+
+console.log(fp)
 /*
 client.prototype.add = function(func, args, callback) {
 
