@@ -1,5 +1,6 @@
 {
   "esversion": 6,
    "devel": true,
-   "node": true
+   "node": true,
+   "predef": ["Homey"]
 }

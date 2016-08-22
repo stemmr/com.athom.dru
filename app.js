@@ -20,38 +20,24 @@ function init() {
         }else if(status === 'off'){
             return callback(null, false);
         }
-
     });
 	});
-/*
-	Homey.manager('flow').on('condition.room_temp',(callback, args)=>{
-		console.log(args.temp_rel === 'larger');
-		fp.add('getTemp',(err,temp)=>{
-			if(err){
-				console.log(err);
-				return callback(err);
-			}
-			if(args.temp_rel === 'larger' && args.temp_set < temp){
+  Homey.manager('flow').on('condition.room_temp',(callback, args)=>{
+    console.log(args);
+    Homey.manager('drivers').getDriver('dru').capabilities.light.get(args.device,(err, temp)=>{
+      if(err){
+        return callback(err);
+      }else if(args.temp_rel === 'larger' && temp > args.temp_set){
+        return callback(null,true);
+      }else if(args.temp_rel === 'smaller' && temp < args.temp_set){
+        return callback(null,true);
+      }else if(args.temp_rel === 'equal' && temp === args.temp_set){
+        return callback(null, true);
+      }
+      return callback(null, false);
 
-				return callback(null, true);
-
-			}else if(args.temp_rel === 'equal' && args.temp_set === temp){
-
-				return callback(null, true);
-
-			}else if(args.temp_rel === 'smaller' && args.temp_set > temp){
-
-				return callback(null,true);
-
-			}else{
-
-				return callback(null,false);
-
-			}
-		});
-	});
-
-*/
+    });
+  });
 }
 
 module.exports.init = init;

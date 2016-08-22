@@ -40,9 +40,6 @@ module.exports = {
         devices[elem.unitId] = modbus.client.tcp.complete({
             host: cli.host,
             port: 502,
-            autoReconnect: false,
-            reconnectTimeout: 1000,
-            timeout: 5000,
             unitId: elem.unitId
           }).on('close', function(){
               console.log('closeded inited', elem.unitId);
@@ -99,9 +96,6 @@ module.exports = {
           devices[device.unitId] = modbus.client.tcp.complete({
               host: cli.host,
               port: 502,
-              autoReconnect: false,
-              reconnectTimeout: 1000,
-              timeout: 5000,
               unitId: device.unitId
             }).on('close', function(){
               console.log('closed new added', device.unitId);
@@ -117,72 +111,89 @@ module.exports = {
   capabilities: {
     light:{
       get:function(device_data, callback){
-        console.log(devices);
-        let fireplace = devices[device_data.unitId];
-        fireplace.connect();
-        fireplace.once('connect',()=>{
-
-          fireplace.readHoldingRegisters(FIREPLACE_STATUS_REG, 1).then((resp) => {
-            fireplace.close().on('close',()=>{
-              const reg = resp.register[0];
-
-          		if (reg & 256) {
-          			return callback(null, 'on');
-          		} else if ((reg & 256) === 0) {
-          			return callback(null, 'off');
-          		}
-
-          		console.log('else');
-          		return callback(new Error('could not get status', null));
-
-            });
-        	}, (err) => {
-        		console.log('in getting light status: ',err);
-            fireplace.close().on('close',()=>{
-                return callback(new Error('failed status'), null);
-            });
-        	});
-        });
+        operate(device_data.unitId, 'read', FIREPLACE_STATUS_REG).then((resp)=>{
+          console.log('getting light data');
+          if (resp & 256) {
+            return callback(null, 'on');
+          } else if ((resp & 256) === 0) {
+            return callback(null, 'off');
+          }
+        },(fail)=>{console.log(fail);});
       },
       set:function(device_data, args, callback){
-        let fireplace = devices[device_data.unitId];
-        fireplace.connect();
-        fireplace.once('connect',()=>{
-            //console.log('sets',devices[device_data.unitId]);
-            var stateReg = 0;
-            if(args === 'on'){
-              stateReg = 103;
-            }else if(args === 'off'){
-              stateReg = 5;
-            }
-            fireplace.writeSingleRegister(FIREPLACE_ACTION_REG,stateReg).then(()=>{
-              console.log('actually turned', args);
-              fireplace.close();
-              fireplace.once('close',()=>{
-                  callback(null,true);
-              });
-            },(fail)=>{
-              fireplace.close();
-              fireplace.once('close',()=>{
-                console.log('seterr',fail);
-                callback(null,false);
-              });
-            });
-          });
+        var stateReg = 0;
+        if(args === 'on'){
+          stateReg = 103;
+        }else if(args === 'off'){
+          stateReg = 5;
+        }
+        operate(device_data.unitId, 'write', FIREPLACE_ACTION_REG, stateReg).then((resp)=>{
+          console.log(resp);
+          callback(null,true);
+        },(fail)=>{
+          console.log(fail);
+          callback(fail,false);
+        });
       }
     },
     temp:{
       get:function(device_data, callback){
-
+        let fp = devices[device_data.unitId];
+        fp.connect();
+        fp.once('connect');
       },
       set:function(device_data, target, callback){
 
       }
     }
-
   },
   deleted:function(device_data){
     delete devices[device_data.unitId];
     console.log('deleted' + device_data.unitId);
   }
 };
+
+function operate(unitId, rw, reg,ops){
+  // unitId R/W register operation             callback
+  // 0       1     2        3          ...      last
+  let fp = devices[unitId];
+  return new Promise((res,rej)=>{
+    fp.connect();
+    fp.once('connect',()=>{
+      if(rw === 'read'){
+        res(fp.readHoldingRegisters(reg, 1).then((resp)=>{
+          //When to reject??
+          return new Promise((res,rej)=>{
+            fp.close();
+            fp.once('close',()=>{
+              console.log('hello');
+              res(resp.register[0]);
+            });
+          });
+        },(fail)=>{
+          fp.close();
+          fp.once('close',()=>{
+              console.log('read',fail);
+              return Promise.reject(fail);
+          });
+        }));
+      }else if(rw === 'write'){
+        res(fp.writeSingleRegister(reg, ops).then((resp)=>{
+          return new Promise((res, rej)=>{
+            fp.close();
+            fp.once('close',()=>{
+              console.log(resp);
+              res(resp);
+            });
+          });
+        },(fail)=>{
+          fp.close();
+          fp.once('close',()=>{
+            console.log(fail);
+            return Promise.reject(fail);
+          });
+        }));
+      }
+    });
+  });
+}
