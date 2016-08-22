@@ -153,6 +153,26 @@ module.exports = {
       set:function(device_data, target, callback){
 
       }
+    },
+    main:{
+      set:function(device_data, args, callback){
+        let stateReg = 0;
+        if(args === 'on'){
+          stateReg = 101;
+        }else if(args === 'off'){
+          stateReg = 3;
+        }
+        operate(device_data.unitId, 'write',FIREPLACE_ACTION_REG,stateReg).then((resp)=>{
+          console.log(resp);
+          callback(null, true);
+        },(fail)=>{
+          console.log(fail);
+          callback(fail, false);
+        });
+      },
+      get:function(device_data, callback){
+
+      }
     }
   },
   deleted:function(device_data){
@@ -179,7 +199,7 @@ function operate(unitId, rw, reg,ops){
               res(resp.register[0]);
             });
           });
-        },(fail)=>{
+        },(fail)=>{//could connect, modbus error
           fp.close();
           fp.once('close',()=>{
               console.log(fp.getStatus());

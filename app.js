@@ -39,6 +39,15 @@ function init() {
 
     });
   });
+
+  Homey.manager('flow').on('action.main_switch',(callback, args)=>{
+    console.log(args);//possible recheck
+    Homey.manager('drivers').getDriver('dru').capabilities.main.set(args.device,(err, status)=>{
+      if(err) return callback(err);
+      console.log('set main '+ args.toggle);
+      return callback(null, true);
+    });
+  });
 }
 
 module.exports.init = init;

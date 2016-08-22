@@ -114,6 +114,40 @@
                         ]
                     }
                 ]
+            },
+            {
+                "id":"main_switch",
+                "title": {
+                    "en": "turn flames",
+                    "nl": "zet vlammen"
+                },
+                "args":[
+                    {
+                      "name":"device",
+                      "type":"device",
+                      "filter": "driver_id=dru"
+                    },
+                    {
+                        "name":"toggle",
+                        "type":"dropdown",
+                        "values":[
+                            {
+                                "id":"on",
+                                "label":{
+                                    "en":"on",
+                                    "nl":"aan"
+                                }
+                            },
+                            {
+                                "id":"off",
+                                "label":{
+                                    "en":"off",
+                                    "nl":"uit"
+                                }
+                            }
+                        ]
+                    }
+                ]
             }
         ]
     },
@@ -139,7 +173,45 @@
                     "template": "add_devices"
                 }
             ],
-            "capabilities":["light"]
+            "capabilities":["light", "main"],
+            "settings":[
+                {
+                  "type":"group",
+                  "label": {
+                    "en":"fireplace settings",
+                    "nl":"haard instellingen"
+                  },
+                  "children":[
+                      {
+                        "id":"rssi",
+                        "type":"number",
+                        "label":{
+                          "en":"RSSI",
+                          "nl":"RSSI"
+                        },
+                        "value": 0
+                      }
+                  ]
+                },
+                {
+                  "type":"group",
+                  "label":{
+                    "en":"gateway settings",
+                    "nl":"gateway instellingen"
+                  },
+                  "children":[
+                    {
+                      "id":"ip",
+                      "type":"text",
+                      "label":{
+                        "en":"ip-address",
+                        "nl":"ip-adres"
+                      },
+                      "value":"0.0.0.0"
+                    }
+                  ]
+                }
+              ]
         }
     ],
     "capabilities":{
@@ -151,6 +223,15 @@
         },
         "getable":true,
         "setable":true
+      },
+      "main":{
+        "type":"boolean",
+        "title":{
+          "en":"Main flame",
+          "nl":"centrale vlam"
+        },
+        "getable": true,
+        "setable": true
       }
     }
 }
