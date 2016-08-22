@@ -24,7 +24,8 @@ function init() {
 	});
   Homey.manager('flow').on('condition.room_temp',(callback, args)=>{
     console.log(args);
-    Homey.manager('drivers').getDriver('dru').capabilities.light.get(args.device,(err, temp)=>{
+    Homey.manager('drivers').getDriver('dru').capabilities.temp.get(args.device,(err, temp)=>{
+      console.log(err, temp);
       if(err){
         return callback(err);
       }else if(args.temp_rel === 'larger' && temp > args.temp_set){

@@ -76,13 +76,13 @@ module.exports = {
                 }
               });
               console.log(deviceList);
-              cli.close().on('close',()=>{
+              cli.close().once('close',()=>{
                 console.log('closed gw');
                 callback(null, deviceList);
               });
             })
             .fail((err)=>{
-              cli.close().on('close', ()=>{
+              cli.close().once('close', ()=>{
                   console.log(`could not run client ${err}`);
                   callback(null, null);
               });
@@ -92,27 +92,32 @@ module.exports = {
         });
 
       socket.on('add_device',(device, callback)=>{
+        if(typeof device.data.unitId !== 'number' || device.data.unitId < 2)
+        {
+          callback(new Error('invalid uid'));
+        }
         gateway.then((cli)=>{
-          devices[device.unitId] = modbus.client.tcp.complete({
+          devices[device.data.unitId] = modbus.client.tcp.complete({
               host: cli.host,
               port: 502,
-              unitId: device.unitId
+              unitId: device.data.unitId
             }).on('close', function(){
-              console.log('closed new added', device.unitId);
+              console.log('closed new added', device.data.unitId);
             }).on('error',(err)=>{
-              console.log(`error uid ${device.unitId} ${err}`);
+              console.log(`error uid ${device.data.unitId} ${err}`);
             }).on('connect',()=>{
-              console.log('connected', device.unitId);
+              console.log('connected', device.data.unitId);
             });
+            console.log(devices);
+            return callback(null,true);
         });
-        callback(null,true);
+
       });
   },
   capabilities: {
     light:{
       get:function(device_data, callback){
         operate(device_data.unitId, 'read', FIREPLACE_STATUS_REG).then((resp)=>{
-          console.log('getting light data');
           if (resp & 256) {
             return callback(null, 'on');
           } else if ((resp & 256) === 0) {
@@ -138,9 +143,12 @@ module.exports = {
     },
     temp:{
       get:function(device_data, callback){
-        let fp = devices[device_data.unitId];
-        fp.connect();
-        fp.once('connect');
+        operate(device_data.unitId, 'read', ROOM_TEMPERATURE_REG).then((resp)=>{
+          callback(null,resp);
+        },(fail)=>{
+          console.log('failed get temp', fail);
+          callback(fail);
+        });
       },
       set:function(device_data, target, callback){
 
@@ -148,8 +156,9 @@ module.exports = {
     }
   },
   deleted:function(device_data){
+    console.log('ds',devices);
     delete devices[device_data.unitId];
-    console.log('deleted' + device_data.unitId);
+    console.log('deleted' + device_data.unitId, devices);
   }
 };
 
@@ -173,6 +182,7 @@ function operate(unitId, rw, reg,ops){
         },(fail)=>{
           fp.close();
           fp.once('close',()=>{
+              console.log(fp.getStatus());
               console.log('read',fail);
               return Promise.reject(fail);
           });
