@@ -174,7 +174,19 @@ module.exports = {
         });
       },
       get:function(device_data, callback){
-        // TODO: add get flame on/off
+        operate(device_data.unitId,'read', FIREPLACE_STATUS_REG).then((resp)=>{
+          console.log('getmain',resp);
+          console.log(resp&4);
+          if(resp & 4){
+            callback(null,'on');
+          }else if((resp & 4) === 0){
+            callback(null, 'off');
+          }
+          callback(new Error('no response received'));
+        },(fail)=>{
+          console.log(fail);
+          callback(fail);
+        });
       }
     },
     secondary:{
@@ -193,8 +205,19 @@ module.exports = {
           callback(fail, false);
         });
       },
-      get:function(){
-        // TODO: get secondary state
+      get:function(device_data, callback){
+        operate(device_data.unitId,'read', FIREPLACE_STATUS_REG).then((resp)=>{
+          console.log('getsecond',resp);
+          if(resp & 8){
+            callback(null,'on');
+          }else if((resp & 8) === 0){
+            callback(null, 'off');
+          }
+          callback(new Error('no response received'));
+        },(fail)=>{
+          console.log(fail);
+          callback(fail);
+        });
       }
     },
     flame_height:{

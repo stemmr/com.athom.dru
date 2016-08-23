@@ -29,6 +29,34 @@
                 ]
             },
             {
+                "id":"main_status",
+                "title":{
+                    "en":"is the main flame !{{on|off}}?",
+                    "nl":"Is de centrale vlam !{{aan|uit}}?"
+                },
+                "args":[
+                  {
+                    "name":"device",
+                    "type":"device",
+                    "filter": "driver_id=dru"
+                  }
+                ]
+            },
+            {
+                "id":"secondary_status",
+                "title":{
+                    "en":"Is the secondary flame !{{on|off}}?",
+                    "nl":"is de tweede vlam !{{aan|uit}}?"
+                },
+                "args":[
+                  {
+                    "name":"device",
+                    "type":"device",
+                    "filter": "driver_id=dru"
+                  }
+                ]
+            },
+            {
                 "id":"room_temp",
                 "title":{
                     "en":"Room temperature is:",

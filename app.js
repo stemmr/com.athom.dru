@@ -40,6 +40,32 @@ function init() {
     });
   });
 
+  Homey.manager('flow').on('condition.main_status',(callback, args)=>{
+    Homey.manager('drivers').getDriver('dru').capabilities.main.get(args.device, (err, status)=>{
+      if(err) {
+        return callback(err);
+      }else if(status === 'on'){
+        return callback(null, true);
+      }else if(status === 'off'){
+        return callback(null, false);
+      }
+      return callback(null,null);
+    });
+  });
+
+  Homey.manager('flow').on('condition.secondary_status',(callback, args)=>{
+    Homey.manager('drivers').getDriver('dru').capabilities.secondary.get(args.device, (err, status)=>{
+      if(err) {
+        return callback(err);
+      }else if(status === 'on'){
+        return callback(null, true);
+      }else if(status === 'off'){
+        return callback(null, false);
+      }
+      return callback(null,null);
+    });
+  });
+
   Homey.manager('flow').on('action.main_switch',(callback, args)=>{
     console.log(args);//possible recheck
     Homey.manager('drivers').getDriver('dru').capabilities.main.set(args.device,args.toggle,(err, status)=>{
@@ -48,7 +74,6 @@ function init() {
       return callback(null, true);
     });
   });
-
 
   Homey.manager('flow').on('action.secondary_switch',(callback, args)=>{
     console.log(args);
