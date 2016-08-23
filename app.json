@@ -148,6 +148,64 @@
                         ]
                     }
                 ]
+            },
+            {
+                "id":"secondary_switch",
+                "title": {
+                    "en": "turn secondary",
+                    "nl": "zet tweede vlam"
+                },
+                "args":[
+                    {
+                      "name":"device",
+                      "type":"device",
+                      "filter": "driver_id=dru"
+                    },
+                    {
+                        "name":"toggle",
+                        "type":"dropdown",
+                        "values":[
+                            {
+                                "id":"on",
+                                "label":{
+                                    "en":"on",
+                                    "nl":"aan"
+                                }
+                            },
+                            {
+                                "id":"off",
+                                "label":{
+                                    "en":"off",
+                                    "nl":"uit"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "id":"main_height",
+                "title": {
+                    "en": "set flame intensity",
+                    "nl": "sterke van de vlam"
+                },
+                "args":[
+                    {
+                      "name":"device",
+                      "type":"device",
+                      "filter": "driver_id=dru"
+                    },
+                    {
+                        "name":"height",
+                        "type":"range",
+                        "min":0,
+                        "max":100,
+                        "step":1,
+                        "label":"%",
+                        "labelMultiplier": 1,
+                        "labelDecimals":2
+                    }
+                ]
             }
         ]
     },
@@ -173,7 +231,7 @@
                     "template": "add_devices"
                 }
             ],
-            "capabilities":["light", "main"],
+            "capabilities":["light", "main","secondary","flame_height"],
             "settings":[
                 {
                   "type":"group",
@@ -228,9 +286,30 @@
         "type":"boolean",
         "title":{
           "en":"Main flame",
-          "nl":"centrale vlam"
+          "nl":"Hoofdvlam"
         },
         "getable": true,
+        "setable": true
+      },
+      "secondary":{
+        "type":"boolean",
+        "title":{
+          "en":"Secondary flame",
+          "nl":"Tweede vlam"
+        },
+        "getable": true,
+        "setable": true
+      },
+      "flame_height":{
+        "type":"number",
+        "decimals":0,
+        "title":{
+          "en":"main flame height",
+          "nl":"intensiteit hoofdvlam"
+        },
+        "max":100,
+        "min": 0,
+        "getable":true,
         "setable": true
       }
     }

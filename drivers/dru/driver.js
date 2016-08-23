@@ -155,13 +155,15 @@ module.exports = {
       }
     },
     main:{
-      set:function(device_data, args, callback){
+      set:function(device_data, state, callback){
+        console.log('arg', state);
         let stateReg = 0;
-        if(args === 'on'){
+        if(state === 'on'){
           stateReg = 101;
-        }else if(args === 'off'){
+        }else if(state === 'off'){
           stateReg = 3;
         }
+        console.log('sreg',stateReg);
         operate(device_data.unitId, 'write',FIREPLACE_ACTION_REG,stateReg).then((resp)=>{
           console.log(resp);
           callback(null, true);
