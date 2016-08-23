@@ -48,6 +48,23 @@ function init() {
       return callback(null, true);
     });
   });
-}
 
+
+  Homey.manager('flow').on('action.secondary_switch',(callback, args)=>{
+    console.log(args);
+    Homey.manager('drivers').getDriver('dru').capabilities.secondary.set(args.device,args.toggle,(err,status)=>{
+      if(err) return callback(err);
+      console.log('set secondary ' + args.toggle);
+      return callback(null, true);
+    });
+  });
+
+  Homey.manager('flow').on('action.main_height',(callback, args)=>{
+    Homey.manager('drivers').getDriver('dru').capabilities.flame_height.set(args.device, args.height, (err,status)=>{
+      if(err) return callback(err);
+      console.log('set height ' + args.height);
+      return callback(null, true);
+    });
+  });
+}
 module.exports.init = init;

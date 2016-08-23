@@ -4,13 +4,16 @@ var ipPromise = require('./UDPpromise.js')();
 var modbus = require('jsmodbus');
 const devices = {};//object containing all currently initiated devices,key UID, value property is Fireplace object
 
-const FIREPLACE_STATUS_REG = 40203;
 const FIREPLACE_ACTION_REG = 40200;
-const FAULT_DETAIL_REG = 40204;
-const ROOM_TEMPERATURE_REG = 40207;
+const FLAME_HEIGHT_REG = 40201;
 const COMM_TIMEOUT_REG = 40202;
+const FIREPLACE_STATUS_REG = 40203;
+const FAULT_DETAIL_REG = 40204;
 const RSSI_GATEWAY_REG = 40205;
 const RSSI_DFGT_REG = 40206;
+const ROOM_TEMPERATURE_REG = 40207;
+
+
 
 var gateway = ipPromise.then((ip)=>{
     console.log('got',ip);
@@ -156,14 +159,12 @@ module.exports = {
     },
     main:{
       set:function(device_data, state, callback){
-        console.log('arg', state);
         let stateReg = 0;
         if(state === 'on'){
           stateReg = 101;
         }else if(state === 'off'){
           stateReg = 3;
         }
-        console.log('sreg',stateReg);
         operate(device_data.unitId, 'write',FIREPLACE_ACTION_REG,stateReg).then((resp)=>{
           console.log(resp);
           callback(null, true);
@@ -173,6 +174,43 @@ module.exports = {
         });
       },
       get:function(device_data, callback){
+        // TODO: add get flame on/off
+      }
+    },
+    secondary:{
+      set:function(device_data,state, callback){
+        let stateReg = 0;
+        if(state === 'on'){
+          stateReg = 102;
+        }else if(state === 'off'){
+          stateReg = 4;
+        }
+        operate(device_data.unitId, 'write',FIREPLACE_ACTION_REG,stateReg).then((resp)=>{
+          console.log(resp);
+          callback(null, true);
+        },(fail)=>{
+          console.log(fail);
+          callback(fail, false);
+        });
+      },
+      get:function(){
+        // TODO: get secondary state
+      }
+    },
+    flame_height:{
+      set:function(device_data, height, callback){
+        console.log('flheight', height);
+        if(height >= 0 && height <= 100){
+            operate(device_data.unitId, 'write', FLAME_HEIGHT_REG, height).then((resp)=>{
+              console.log(resp);
+              callback(null, true);
+            },(fail)=>{
+              console.log('error setting flame height',fail);
+              callback(fail, false);
+            });
+        }
+      },
+      get:function(){
 
       }
     }
