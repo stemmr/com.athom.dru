@@ -1,9 +1,9 @@
-"use strict";
+var pr = new Promise(function(resolve, reject) {
 
-console.log(typeof p);
+});
+pr.then(console.log);
 
-if(true){
-  var p = 15;
-}
-
-console.log(p);
+var arr = [];
+arr.push(pr);
+pr.then();
+console.log(arr[0]===pr)

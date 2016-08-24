@@ -112,8 +112,8 @@
             {
                 "id":"light_switch",
                 "title": {
-                    "en": "turn light",
-                    "nl": "doe licht"
+                    "en": "turn light on",
+                    "nl": "doe licht aan"
                 },
                 "args":[
                     {
@@ -246,6 +246,14 @@
 
             },
             "class":"other",
+            "mobile":{
+              "components":[
+                {
+                  "id":"toggle",
+                  "capabilities":["onoff.light"]
+                }
+              ]
+            },
             "pair":[
                 {
                     "id":"list_my_devices",
@@ -259,7 +267,7 @@
                     "template": "add_devices"
                 }
             ],
-            "capabilities":["light", "main","secondary","flame_height"],
+            "capabilities":["onoff.light"],
             "settings":[
                 {
                   "type":"group",
@@ -301,33 +309,6 @@
         }
     ],
     "capabilities":{
-      "light":{
-        "type":"boolean",
-        "title":{
-          "en":"Control lights@",
-          "nl":"Controleer lichten@"
-        },
-        "getable":true,
-        "setable":true
-      },
-      "main":{
-        "type":"boolean",
-        "title":{
-          "en":"Main flame",
-          "nl":"Hoofdvlam"
-        },
-        "getable": true,
-        "setable": true
-      },
-      "secondary":{
-        "type":"boolean",
-        "title":{
-          "en":"Secondary flame",
-          "nl":"Tweede vlam"
-        },
-        "getable": true,
-        "setable": true
-      },
       "flame_height":{
         "type":"number",
         "decimals":0,

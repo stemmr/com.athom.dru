@@ -1,30 +1,29 @@
 "use strict";
 var modbus = require('jsmodbus');
 
-var ipPromise = new Promise(function(resolve, reject) {
-  setTimeout(resolve, 2000);
+let client = modbus.client.tcp.complete({
+  host: '192.168.0.51',
+  port: 502,
+  autoReconnect: false,
+  reconnectTimeout: 1000,
+  timeout: 5000,
+  unitId: 1
 });
 
-var gateway = ipPromise.then((ip)=>{
+setInterval(()=>{
+  console.log(client.getState());
+},5);
 
-    let client = modbus.client.tcp.complete({
-      host: ip,
-      port: 502,
-      autoReconnect: false,
-      reconnectTimeout: 1000,
-      timeout: 5000,
-      unitId: 1
-    });
-    client.on('close', function(){
-              console.log('closed gateway connection');
-            })
-          .once('error',(err)=>{
-            console.log('gw error', err);
-          });
-    return client;
+client.connect();
+
+client.on('connect',()=>{
+  client.readHoldingRegisters(40200,1).then((res)=>{
+    console.log(res);
+  });
 });
 
-gateway.then((gw)=>{
-  console.log(gw);
+client.on('close',()=>{
+  setTimeout(function () {
+
+  }, 2000);
 });
-console.log(gateway);

@@ -2,26 +2,18 @@
 function init() {
 
   Homey.manager('flow').on('action.light_switch', (callback, args)=>{
-    console.log(args);
-    Homey.manager('drivers').getDriver('dru').capabilities.light.set(args.device,args.toggle,(err,status)=>{
-        if (err) return callback(err);
-        console.log(`setting ${args.toggle}!`, status);
-	      callback(null,status);
-    });
+    if(args.toggle === 'on'){
+      Homey.manager('drivers').getDriver('dru').capabilities['onoff.light'].set(args.device,true,callback);
+    }else if(args.toggle === 'off'){
+      Homey.manager('drivers').getDriver('dru').capabilities['onoff.light'].set(args.device,false,callback);
+    }
   });
 
 	Homey.manager('flow').on('condition.light_status',(callback, args) =>{
 		console.log(args);
-		Homey.manager('drivers').getDriver('dru').capabilities.light.get(args.device,(err,status)=>{
-        if(err){
-          return callback(err);
-        }else if(status === 'on'){
-            return callback(null, true);
-        }else if(status === 'off'){
-            return callback(null, false);
-        }
-    });
+		Homey.manager('drivers').getDriver('dru').capabilities['onoff.light'].get(args.device,callback);
 	});
+
   Homey.manager('flow').on('condition.room_temp',(callback, args)=>{
     console.log(args);
     Homey.manager('drivers').getDriver('dru').capabilities.temp.get(args.device,(err, temp)=>{
@@ -41,47 +33,27 @@ function init() {
   });
 
   Homey.manager('flow').on('condition.main_status',(callback, args)=>{
-    Homey.manager('drivers').getDriver('dru').capabilities.main.get(args.device, (err, status)=>{
-      if(err) {
-        return callback(err);
-      }else if(status === 'on'){
-        return callback(null, true);
-      }else if(status === 'off'){
-        return callback(null, false);
-      }
-      return callback(null,null);
-    });
+    Homey.manager('drivers').getDriver('dru').capabilities['onoff.main'].get(args.device, callback);
   });
 
   Homey.manager('flow').on('condition.secondary_status',(callback, args)=>{
-    Homey.manager('drivers').getDriver('dru').capabilities.secondary.get(args.device, (err, status)=>{
-      if(err) {
-        return callback(err);
-      }else if(status === 'on'){
-        return callback(null, true);
-      }else if(status === 'off'){
-        return callback(null, false);
-      }
-      return callback(null,null);
-    });
+    Homey.manager('drivers').getDriver('dru').capabilities['onoff.light'].get(args.device, callback);
   });
 
   Homey.manager('flow').on('action.main_switch',(callback, args)=>{
-    console.log(args);//possible recheck
-    Homey.manager('drivers').getDriver('dru').capabilities.main.set(args.device,args.toggle,(err, status)=>{
-      if(err) return callback(err);
-      console.log('set main '+ args.toggle);
-      return callback(null, true);
-    });
+    if(args.toggle === 'on'){
+      Homey.manager('drivers').getDriver('dru').capabilities['onoff.light'].set(args.device,true,callback);
+    }else if(args.toggle === 'off'){
+      Homey.manager('drivers').getDriver('dru').capabilities['onoff.light'].set(args.device,false,callback);
+    }
   });
 
   Homey.manager('flow').on('action.secondary_switch',(callback, args)=>{
-    console.log(args);
-    Homey.manager('drivers').getDriver('dru').capabilities.secondary.set(args.device,args.toggle,(err,status)=>{
-      if(err) return callback(err);
-      console.log('set secondary ' + args.toggle);
-      return callback(null, true);
-    });
+    if(args.toggle === 'on'){
+      Homey.manager('drivers').getDriver('dru').capabilities['onoff.light'].set(args.device,true,callback);
+    }else if(args.toggle === 'off'){
+      Homey.manager('drivers').getDriver('dru').capabilities['onoff.light'].set(args.device,false,callback);
+    }
   });
 
   Homey.manager('flow').on('action.main_height',(callback, args)=>{
