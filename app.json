@@ -250,7 +250,24 @@
               "components":[
                 {
                   "id":"toggle",
-                  "capabilities":["onoff.light"]
+                  "capabilities":["onoff.light"],
+                  "options":{
+                    "showTitle":true
+                  }
+                },
+                {
+                  "id":"toggle",
+                  "capabilities":["onoff.main"],
+                  "options":{
+                    "showTitle":true
+                  }
+                },
+                {
+                  "id":"toggle",
+                  "capabilities":["onoff.secondary"],
+                  "options":{
+                    "showTitle":true
+                  }
                 }
               ]
             },
@@ -259,15 +276,20 @@
                     "id":"list_my_devices",
                     "template":"list_devices",
                     "navigation": {
-                        "next": "add_my_devices"
+                        "next": "checkfail"
                     }
                 },
                 {
                     "id": "add_my_devices",
-                    "template": "add_devices"
+                    "template": "add_devices",
+                    "navigation":{
+                      "next":"checkFail"
+                    }
+                },{
+                  "id":"checkfail"
                 }
             ],
-            "capabilities":["onoff.light"],
+            "capabilities":["onoff.light","onoff.main","onoff.secondary","flame_height"],
             "settings":[
                 {
                   "type":"group",
@@ -309,6 +331,7 @@
         }
     ],
     "capabilities":{
+
       "flame_height":{
         "type":"number",
         "decimals":0,
@@ -320,6 +343,14 @@
         "min": 0,
         "getable":true,
         "setable": true
+      }
+    },
+    "capabilitiesOptions":{
+      "onoff":{
+        "title":{
+          "en":"Light",
+          "nl":"Licht"
+        }
       }
     }
 }

@@ -1,6 +1,5 @@
 'use strict';
 function init() {
-
   Homey.manager('flow').on('action.light_switch', (callback, args)=>{
     if(args.toggle === 'on'){
       Homey.manager('drivers').getDriver('dru').capabilities['onoff.light'].set(args.device,true,callback);
@@ -42,17 +41,17 @@ function init() {
 
   Homey.manager('flow').on('action.main_switch',(callback, args)=>{
     if(args.toggle === 'on'){
-      Homey.manager('drivers').getDriver('dru').capabilities['onoff.light'].set(args.device,true,callback);
+      Homey.manager('drivers').getDriver('dru').capabilities['onoff.main'].set(args.device,true,callback);
     }else if(args.toggle === 'off'){
-      Homey.manager('drivers').getDriver('dru').capabilities['onoff.light'].set(args.device,false,callback);
+      Homey.manager('drivers').getDriver('dru').capabilities['onoff.main'].set(args.device,false,callback);
     }
   });
 
   Homey.manager('flow').on('action.secondary_switch',(callback, args)=>{
     if(args.toggle === 'on'){
-      Homey.manager('drivers').getDriver('dru').capabilities['onoff.light'].set(args.device,true,callback);
+      Homey.manager('drivers').getDriver('dru').capabilities['onoff.secondary'].set(args.device,true,callback);
     }else if(args.toggle === 'off'){
-      Homey.manager('drivers').getDriver('dru').capabilities['onoff.light'].set(args.device,false,callback);
+      Homey.manager('drivers').getDriver('dru').capabilities['onoff.secondary'].set(args.device,false,callback);
     }
   });
 

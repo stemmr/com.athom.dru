@@ -1,12 +1,26 @@
 "use strict";
 const dgram = require('dgram');
 const server = dgram.createSocket('udp4');
+var mdns = require('mdns-js');
+
+var browser = mdns.createBrowser('_modbus._tcp.local');
+
+browser.on('ready', function () {
+    browser.discover();
+});
+
+
 
 //add try/catch block in case of failure
 let ipArray = [];
 
 let ipAwait = function(){
   return new Promise((res,rej)=>{
+
+  browser.on('update', function (data) {
+      res(data.addresses[0]);
+  });
+
   server.once('error', (err) => {
   	console.log(`server error:\n${err.stack}`);
   	server.close();
@@ -29,7 +43,9 @@ let ipAwait = function(){
   	console.log(`server listening ${address.address}:${address.port}`);
   });
 
-    server.bind(35353);
+  server.bind(35353);
+
+
   });
 };
 //ipWait.then(console.log,()=>{console.log('rejected');});

@@ -96,28 +96,52 @@ module.exports = {
         });
 
       socket.on('add_device',(device, callback)=>{
+        console.log(socket);
         if(typeof device.data.unitId !== 'number' || device.data.unitId < 2)
         {
           callback(new Error('invalid uid'));
         }
         gateway.then((cli)=>{
           console.log('making',device);
-          devices[device.data.unitId] = modbus.client.tcp.complete({
+
+
+        });
+      });
+
+      socket.on('checkfail',(device, callback)=>{
+        console.log('chf',device);
+        console.log(gateway);
+        gateway.then((cli)=>{
+          devices[device.unitId] = modbus.client.tcp.complete({
               host: cli.host,
               port: 502,
-              unitId: device.data.unitId
+              unitId: device.unitId
             }).on('close', function(){
-              console.log('closed new added', device.data.unitId);
+              console.log('closed new added', device.unitId);
             }).on('error',(err)=>{
               console.log('devsate',devices[2].getState());
-              console.log(`error uid ${device.data.unitId} ${err}`);
+              console.log(`error uid ${device.unitId} ${err}`);
             }).on('connect',()=>{
-              console.log('connected', device.data.unitId);
+              console.log('connected', device.unitId);
             });
-            console.log(devices);
-            return callback(null,true);
-        });
 
+          operate(device.unitId, 'read', FIREPLACE_STATUS_REG).then((resp)=>{
+            console.log('pairresp', resp);
+            if(resp&1){//if fault active
+              console.log('FAULT');
+              operate(devices[device.unitId],'read',FAULT_DETAIL_REG).then((resp)=>{
+                  return callback(null, resp);
+              });
+            }else{
+                return callback(null, true);
+            }
+          },(fail)=>{
+            console.log('could not pair', fail);
+            callback(fail);
+          });
+        },()=>{
+          console.log('rejected');
+        });
       });
   },
   capabilities: {
@@ -151,11 +175,8 @@ module.exports = {
       get:function(device_data, callback){
         console.log('get main');
         operate(device_data.unitId,'read', FIREPLACE_STATUS_REG).then((resp)=>{
-          callback(null,resp & 4);
-        },(fail)=>{
-          console.log(fail);
-          callback(fail);
-        });
+          callback(null,!!(resp & 4));
+        },callback);
       },
       set:function(device_data, state, callback){
         console.log('set main');
@@ -179,7 +200,7 @@ module.exports = {
       get:function(device_data, callback){
         console.log('get sec');
         operate(device_data.unitId,'read', FIREPLACE_STATUS_REG).then((resp)=>{
-          callback(null,resp & 8);
+          callback(null,!!(resp & 8));
         },(fail)=>{
           console.log(fail);
           callback(fail);
@@ -228,8 +249,8 @@ module.exports = {
             });
         }
       },
-      get:function(){
-
+      get:function(device_data, callback){
+        callback(null, 50);
       }
     }
   },
@@ -245,10 +266,8 @@ var taskQ =[];
 function operate(unitId, rw, reg,ops){
   // unitId R/W register operation             callback
   // 0       1     2        3          ...      last
-
-  console.log('operating');
   let fp = devices[unitId];
-  if(fp)
+  if(!fp) return Promise.reject(new Error('cannot connect to fireplace'));
   console.log(unitId, fp.getState());
   if(fp.getState() !== 'init' && fp.getState() !== 'closed'){
     //might break because it doesnt check for taskQ.length >0
@@ -266,43 +285,62 @@ function operate(unitId, rw, reg,ops){
     console.log('append',taskQ);
     return taskProm;
   }else{
-    console.log("reading or writing");
     return new Promise((res,rej)=>{
       fp.connect();
       fp.once('connect',()=>{
-        if(rw === 'read'){
-          fp.readHoldingRegisters(reg, 1).then((resp)=>{
-            //When to reject??
-              fp.close();
-              fp.once('close',()=>{
-                console.log('hello');
-                res(resp.register[0]);
+        fp.readHoldingRegisters(FIREPLACE_STATUS_REG,1).then((status)=>{
+          if(status.register[0] & 1){
+            //FAULT
+            fp.writeSingleRegister(FIREPLACE_ACTION_REG, 1000).then(()=>{
+              fp.readHoldingRegisters(FIREPLACE_STATUS_REG,1).then((fres)=>{
+                if(fres.register[0]&1){
+                  fp.close().once('close',()=>{
+                      rej(new Error('Could not resolve fault'));
+                  });
+                  //you're screwed
+                }else{
+                  fp.close().once('close',()=>{
+                    rej(new Error('Resolved Fault, retry command'));
+                  });
+                }
               });
-          },(fail)=>{//could connect, modbus error
-            fp.close();
-            fp.once('close',()=>{
-                console.log(fp.getStatus());
-                console.log('read',fail);
-                rej(fail);
             });
-          });
-        }else if(rw === 'write'){
-          fp.writeSingleRegister(reg, ops).then((resp)=>{
-              fp.close();
-              fp.once('close',()=>{
-                console.log(resp);
-                res(resp);
+          }else{
+            if(rw === 'read'){
+              fp.readHoldingRegisters(reg, 1).then((resp)=>{
+                //When to reject??
+                  fp.close();
+                  fp.once('close',()=>{
+                    res(resp.register[0]);
+                  });
+              },(fail)=>{//could connect, modbus error
+                fp.close();
+                fp.once('close',()=>{
+                    console.log(fp.getStatus());
+                    console.log('read',fail);
+                    rej(fail);
+                });
               });
+            }else if(rw === 'write'){
+              fp.writeSingleRegister(reg, ops).then((resp)=>{
+                  fp.close();
+                  fp.once('close',()=>{
+                    console.log(resp);
+                    res(resp);
+                  });
 
-          },(fail)=>{
-            fp.close();
-            fp.once('close',()=>{
-              console.log(fail);
-              rej(fail);
-            });
-          });
-        }
+              },(fail)=>{
+                fp.close();
+                fp.once('close',()=>{
+                  console.log(fail);
+                  rej(fail);
+                });
+              });
+            }
+          }
+        });
       });
-    });
-  }
+
+  });
+}
 }

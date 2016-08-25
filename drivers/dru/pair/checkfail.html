@@ -1,0 +1,59 @@
+<head>
+<link rel="stylesheet" type="text/css" href="main.css">
+</head>
+
+<body>
+
+<div id="center">
+	<img src="images/spinner.gif" id="centimg">
+</div>
+
+<div id = "feedback">
+Checking status of device...
+</div>
+
+
+	<script>
+	var central = document.getElementById('centimg');
+	var feedback = document.getElementById('feedback');
+
+	if(window.selected_devices.length > 0){
+			window.selected_devices.forEach(function(elem){
+			var dev = window.found_devices[elem];
+			console.log(dev);
+			Homey.emit('checkfail',dev.data,function(err, result){
+				console.log(typeof result);
+				if(err){
+					central.src = "images/crossMark.svg";
+					feedback.innerHTML = err;
+					console.log(err);
+				}else if(typeof result === 'boolean'){
+					console.log(result);
+					central.src = "images/checkMark.svg";
+					feedback.innerHTML = "Connected!"
+					setTimeout(function () {
+						Homey.showView('add_my_devices');
+					}, 1000);
+				}else if(typeof result === 'number'){
+					central.src = "images/crossMark.svg";
+					feedback.innerHTML = "Fault number " + result;
+				}
+			});
+		})
+	}else{
+		central.src = "images/crossMark.svg";
+		feedback.innerHTML = "No device selected";
+	}
+
+	Homey.on('conn',function(device_data, callback){//returns false if failed to connect
+		console.log('device_data',device_data);
+
+		Homey.addDevice(device_data, function( err, result ){
+		    if( err ) return console.error('err',err);
+		    console.log('res',result);
+		    Homey.done();
+		});
+	});
+
+	</script>
+</body>
