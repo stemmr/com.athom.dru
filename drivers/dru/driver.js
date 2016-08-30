@@ -236,8 +236,9 @@ module.exports = {
     },
     flame_height:{
       set:function(device_data, height, callback){
-        if(height >= 0 && height <= 100){
-            operate(device_data.unitId, 'write', FLAME_HEIGHT_REG, height).then((resp)=>{
+        let setHeight = height * 100;
+        if(setHeight >= 0 && setHeight <= 100){
+            operate(device_data.unitId, 'write', FLAME_HEIGHT_REG, setHeight).then((resp)=>{
               callback(null, true);
             },(fail)=>{
               callback(fail, false);
@@ -251,18 +252,24 @@ module.exports = {
     flame_enum:{
       set:function (device_data, state, callback) {
         if(state === 'both'){
-          operate(device_data.unitId,'write',FIREPLACE_ACTION_REG,101).then(resp=>{
+          operate(device_data.unitId,'write',FIREPLACE_ACTION_REG,102).then(resp=>{
             callback(null, true);
           },console.log);
         }else if(state === 'single'){
           console.log('gottosingle');
-          operate(device_data.unitId,'write',FIREPLACE_ACTION_REG,101).then(()=>{
-            //operate(device_data.unitid,'write',FIREPLACE_ACTION_REG,4).then(resp=>{
-              //console.log('only main');
-              console.log('workin');
-              callback(null, true);
-            //});
-          });
+          operate(device_data.unitId, 'read', FIREPLACE_STATUS_REG).then(resp =>{
+            //main and second burner are on
+            if((resp & 4) && (resp & 8)){
+              operate(device_data.unitId,'write',FIREPLACE_ACTION_REG, 4).then(resp=>{
+                callback(null, true);
+              },callback);
+            }else if(!(resp & 4) && !(resp & 8)){
+              operate(device_data.unitId, 'write', FIREPLACE_ACTION_REG, 101).then(resp=>{
+                console.log('both are off');
+                operate(device_data.unitId, 'write', FIREPLACE_ACTION_REG, 4);
+              }, callback);
+            }
+          },callback);
         }else if(state === 'off'){
           operate(device_data.unitId,'write',FIREPLACE_ACTION_REG,3).then(resp =>{
             callback(null, true);
@@ -380,25 +387,31 @@ function setFireplaceSettings(device_data){
   console.log('setting data');
   let setts = {};
   let pArray = [];
-  pArray.push(operate(device_data.unitId,'read', FIREPLACE_STATUS_REG));
-  pArray.push(operate(device_data.unitId,'read', FAULT_DETAIL_REG));
-  pArray.push(operate(device_data.unitId,'read', ROOM_TEMPERATURE_REG));
-  //pArray.push(operate(unitId,'read', RSSI_GATEWAY_REG));
+  pArray.push(operate(device_data.unitId,'read', FIREPLACE_STATUS_REG));// 0
+  pArray.push(operate(device_data.unitId,'read', FAULT_DETAIL_REG));// 1
+  pArray.push(operate(device_data.unitId,'read', ROOM_TEMPERATURE_REG));// 2
+  pArray.push(operate(device_data.unitId,'read', RSSI_GATEWAY_REG));//3
+  pArray.push(operate(device_data.unitId,'read', RSSI_DFGT_REG));//4
 
   return Promise.all(pArray).then(setArray =>{
     //console.log(setArray);
     let statusReg = setArray[0];
     let faultNumber = setArray[1];
-    (statusReg & 1) ? (setts.fault = 'Fault '+faultNumber) : setts.fault = 'No faults';
-    (statusReg & 2) ? setts.pilot = "on" : setts.pilot = "off";
-    (statusReg & 4) ? setts.main = "on" : setts.main = "off";
-    (statusReg & 8) ? setts.secondary = "on" : setts.secondary = "off";
-    (statusReg & 256) ? setts.light = "on" : setts.light = "off";
-    (statusReg & 2048) ? setts.rcbound = "connected" : setts.rcbound="disconnected";
+    setts.fault = (statusReg & 1) ? ('Fault '+faultNumber) : 'No faults';
+    setts.pilot = (statusReg & 2) ? "on" : "off";
+    setts.main = (statusReg & 4) ? "on" : "off";
+    setts.secondary = (statusReg & 8) ? "on" : "off";
+    setts.light = (statusReg & 256) ? "on" : "off";
+    setts.rcbound = (statusReg & 2048) ? "connected" : "disconnected";
+    setts.flame_possible = (statusReg & 32768) ? "ignition currently not possible" : "ignition possible";
 
-    (setArray[2] < 700) ? setts.temperature = (setArray[2]/10).toString() :
-    //console.log(setts);
-    module.exports.setSettings(device_data,setts);
+    if(setArray[2] < 700) setts.temperature = (setArray[2]/10).toString();
+    console.log(setArray);
+
+    //multiply by -0.5 according to docs
+    setts.rssi_gateway = (-0.5*setArray[3]).toString();
+    setts.rssi_dfgt = (-0.5*setArray[4]).toString();
+    module.exports.setSettings(device_data, setts, console.log);
     //console.log(setArray);
   },fail =>{
     console.log('me no set status', fail);

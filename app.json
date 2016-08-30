@@ -227,8 +227,8 @@
                         "name":"height",
                         "type":"range",
                         "min":0,
-                        "max":100,
-                        "step":1,
+                        "max":1,
+                        "step":0.01,
                         "label":"%",
                         "labelMultiplier": 1,
                         "labelDecimals":2
@@ -273,7 +273,11 @@
                   }
                 },{
                   "id":"slider",
-                  "capabilities":["flame_height"]
+                  "capabilities":["flame_height"],
+                  "options":{
+                    "max":100,
+                    "min": 0
+                  }
                 }
               ]
             },
@@ -305,11 +309,20 @@
                   },
                   "children":[
                       {
-                        "id":"rssi",
+                        "id":"rssi_gateway",
                         "type": "label",
                         "label":{
                           "en":"RSSI",
                           "nl":"RSSI"
+                        },
+                        "value":"-"
+                      },
+                      {
+                        "id":"rssi_dfgt",
+                        "type": "label",
+                        "label":{
+                          "en":"dfgtRSSI",
+                          "nl":"dfgtRSSI"
                         },
                         "value":"-"
                       },
@@ -395,24 +408,6 @@
                         "value":"-"
                       }
                   ]
-                },
-                {
-                  "type":"group",
-                  "label":{
-                    "en":"gateway settings",
-                    "nl":"gateway instellingen"
-                  },
-                  "children":[
-                    {
-                      "id":"ip",
-                      "type":"text",
-                      "label":{
-                        "en":"ip-address",
-                        "nl":"ip-adres"
-                      },
-                      "value":"0.0.0.0"
-                    }
-                  ]
                 }
               ]
         }
@@ -454,7 +449,7 @@
       },
       "flame_height":{
         "type":"number",
-        "decimals":0,
+        "decimals":2,
         "title":{
           "en":"main flame height",
           "nl":"intensiteit hoofdvlam"
