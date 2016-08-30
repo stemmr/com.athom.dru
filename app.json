@@ -10,6 +10,11 @@
         "name": "Arthur Stemmer",
         "email": "apstemmer@hotmail.com"
     },
+    "credits":{
+      "images":{
+        "cross":"useiconic.com"
+      }
+    },
 
     "description":"Use this app to control your DRU fireplace via Homey",
     "flow" : {
@@ -261,14 +266,14 @@
 
                   "options":{
                     "icons":{
-                      "top":false,
-                      "middle":false,
-                      "bottom":false
+                      "top":"/drivers/dru/assets/bigflame.svg",
+                      "middle":"/drivers/dru/assets/smallflame.svg",
+                      "bottom":"/drivers/dru/assets/off_cross.svg"
                     },
                     "values":{
                       "top":"both",
-                      "middle":"off",
-                      "bottom":"single"
+                      "middle":"single",
+                      "bottom":"off"
                     }
                   }
                 },{
@@ -321,8 +326,8 @@
                         "id":"rssi_dfgt",
                         "type": "label",
                         "label":{
-                          "en":"dfgtRSSI",
-                          "nl":"dfgtRSSI"
+                          "en":"remote signal",
+                          "nl":"signaal afstandsbediening"
                         },
                         "value":"-"
                       },

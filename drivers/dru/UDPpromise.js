@@ -1,21 +1,18 @@
 "use strict";
 const dgram = require('dgram');
 const server = dgram.createSocket('udp4');
-var mdns = require('mdns-js');
-
-var browser = mdns.createBrowser('_modbus._tcp.local');
-
-browser.on('ready', function () {
-    browser.discover();
-});
-
-
+let mdns = require('mdns-js');
 
 //add try/catch block in case of failure
 let ipArray = [];
 
 let ipAwait = function(){
   return new Promise((res,rej)=>{
+  let browser = mdns.createBrowser('_modbus._tcp.local');
+
+  browser.on('ready', function () {
+      browser.discover();
+  });
 
   browser.on('update', function (data) {
       res(data.addresses[0]);
@@ -32,13 +29,11 @@ let ipAwait = function(){
 
   		if(ipArray.indexOf(rinfo.address) === -1){
         ipArray.push(rinfo.address);
-        res(rinfo.address);
+        if(typeof rinfo.address === 'string'){
+          res(rinfo.address);
+        }
   		}
   	}
-  });
-
-  server.on('listening', () => {
-  	var address = server.address();
   });
 
   server.bind(35353);

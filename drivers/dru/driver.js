@@ -384,7 +384,7 @@ function operate(unitId, rw, reg,ops){
 }
 
 function setFireplaceSettings(device_data){
-  console.log('setting data');
+  //console.log('setting data');
   let setts = {};
   let pArray = [];
   pArray.push(operate(device_data.unitId,'read', FIREPLACE_STATUS_REG));// 0
@@ -406,12 +406,12 @@ function setFireplaceSettings(device_data){
     setts.flame_possible = (statusReg & 32768) ? "ignition currently not possible" : "ignition possible";
 
     if(setArray[2] < 700) setts.temperature = (setArray[2]/10).toString();
-    console.log(setArray);
+    //console.log(setArray);
 
     //multiply by -0.5 according to docs
     setts.rssi_gateway = (-0.5*setArray[3]).toString();
     setts.rssi_dfgt = (-0.5*setArray[4]).toString();
-    module.exports.setSettings(device_data, setts, console.log);
+    module.exports.setSettings(device_data, setts);
     //console.log(setArray);
   },fail =>{
     console.log('me no set status', fail);
