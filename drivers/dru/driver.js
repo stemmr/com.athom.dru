@@ -45,16 +45,18 @@ module.exports = {
             port: 502,
             unitId: elem.unitId
           }).on('close', function(){
-              console.log('closeded inited', elem.unitId);
+              //console.log('closeded inited', elem.unitId);
               })
             .on('error',(err)=>{
-              console.log(err);
+              if(err.errno !== 'ECONNRESET') console.log(err.errno);
+
               })
             .on('connect',()=>{
-              console.log('connected', elem.unitId);
+              //console.log('connected', elem.unitId);
             });
+        devices[elem.unitId].settingsInterval = setInterval( setFireplaceSettings, 5000, elem);
       });
-        console.log('made all the fireplaces');
+        console.log('finished making fireplaces');
         return callback(null,true);
     });
   },
@@ -110,22 +112,25 @@ module.exports = {
 
       socket.on('checkfail',(device, callback)=>{
         console.log('chf',device);
-        console.log(gateway);
         gateway.then((cli)=>{
           devices[device.unitId] = modbus.client.tcp.complete({
               host: cli.host,
               port: 502,
               unitId: device.unitId
             }).on('close', function(){
-              console.log('closed new added', device.unitId);
+              //console.log('closed new added', device.unitId);
             }).on('error',(err)=>{
-              console.log('devsate',devices[2].getState());
-              console.log(`error uid ${device.unitId} ${err}`);
+              //console.log('devsate',devices[2].getState());
+              if(err.errno !== 'ECONNRESET') console.log(err);
+                //console.log(`error uid ${device.unitId} ${err}`);
             }).on('connect',()=>{
-              console.log('connected', device.unitId);
+              //console.log('connected', device.unitId);
             });
 
           operate(device.unitId, 'read', FIREPLACE_STATUS_REG).then((resp)=>{
+            devices[device.unitId].settingsInterval = setInterval(function () {
+                setFireplaceSettings(device);
+            }, 5000);
             console.log('pairresp', resp);
             if(resp&1){//if fault active
               console.log('FAULT');
@@ -135,6 +140,8 @@ module.exports = {
             }else{
                 return callback(null, true);
             }
+
+
           },(fail)=>{
             console.log('could not pair', fail);
             callback(fail);
@@ -173,7 +180,6 @@ module.exports = {
     },
     "onoff.main":{
       get:function(device_data, callback){
-        console.log('get main');
         operate(device_data.unitId,'read', FIREPLACE_STATUS_REG).then((resp)=>{
           callback(null,!!(resp & 4));
         },callback);
@@ -187,10 +193,8 @@ module.exports = {
           stateReg = 3;
         }
         operate(device_data.unitId, 'write',FIREPLACE_ACTION_REG,stateReg).then((resp)=>{
-          console.log(resp);
           callback(null, true);
         },(fail)=>{
-          console.log(fail);
           callback(fail, false);
         });
       }
@@ -198,16 +202,13 @@ module.exports = {
     "onoff.secondary":{
 
       get:function(device_data, callback){
-        console.log('get sec');
         operate(device_data.unitId,'read', FIREPLACE_STATUS_REG).then((resp)=>{
           callback(null,!!(resp & 8));
         },(fail)=>{
-          console.log(fail);
           callback(fail);
         });
       },
       set:function(device_data,state, callback){
-        console.log('set sec');
         let stateReg = 0;
         if(state){
           stateReg = 102;
@@ -215,10 +216,8 @@ module.exports = {
           stateReg = 4;
         }
         operate(device_data.unitId, 'write',FIREPLACE_ACTION_REG,stateReg).then((resp)=>{
-          console.log(resp);
           callback(null, true);
         },(fail)=>{
-          console.log(fail);
           callback(fail, false);
         });
       }
@@ -228,7 +227,6 @@ module.exports = {
         operate(device_data.unitId, 'read', ROOM_TEMPERATURE_REG).then((resp)=>{
           callback(null,resp);
         },(fail)=>{
-          console.log('failed get temp', fail);
           callback(fail);
         });
       },
@@ -238,24 +236,60 @@ module.exports = {
     },
     flame_height:{
       set:function(device_data, height, callback){
-        console.log('flheight', height);
         if(height >= 0 && height <= 100){
             operate(device_data.unitId, 'write', FLAME_HEIGHT_REG, height).then((resp)=>{
-              console.log(resp);
               callback(null, true);
             },(fail)=>{
-              console.log('error setting flame height',fail);
               callback(fail, false);
             });
         }
       },
       get:function(device_data, callback){
-        callback(null, 50);
+        callback(null, 90);
+      }
+    },
+    flame_enum:{
+      set:function (device_data, state, callback) {
+        if(state === 'both'){
+          operate(device_data.unitId,'write',FIREPLACE_ACTION_REG,101).then(resp=>{
+            callback(null, true);
+          },console.log);
+        }else if(state === 'single'){
+          console.log('gottosingle');
+          operate(device_data.unitId,'write',FIREPLACE_ACTION_REG,101).then(()=>{
+            //operate(device_data.unitid,'write',FIREPLACE_ACTION_REG,4).then(resp=>{
+              //console.log('only main');
+              console.log('workin');
+              callback(null, true);
+            //});
+          });
+        }else if(state === 'off'){
+          operate(device_data.unitId,'write',FIREPLACE_ACTION_REG,3).then(resp =>{
+            callback(null, true);
+          });
+        }else{
+          console.log('invalid state');
+          callback(new Error('inv state'));
+        }
+        console.log('gternary',device_data, state);
+      },
+      get:function (device_data, callback) {
+        operate(device_data.unitId,'read',FIREPLACE_STATUS_REG).then(resp =>{
+          if((resp & 4) && (resp & 8)){
+            return callback(null, 'both');
+          }else if(resp & 4){
+            return callback(null, 'single');
+          }else if(!(resp & 4) && !(resp & 8)){
+            return callback(null, 'off');
+          }else{
+            return callback(new Error('Invalid flame settings'));
+          }
+        });
       }
     }
   },
   deleted:function(device_data){
-    console.log('ds',devices);
+    clearInterval(devices[device_data.unitId].settingsInterval);
     delete devices[device_data.unitId];
     console.log('deleted' + device_data.unitId, devices);
   }
@@ -268,7 +302,6 @@ function operate(unitId, rw, reg,ops){
   // 0       1     2        3          ...      last
   let fp = devices[unitId];
   if(!fp) return Promise.reject(new Error('cannot connect to fireplace'));
-  console.log(unitId, fp.getState());
   if(fp.getState() !== 'init' && fp.getState() !== 'closed'){
     //might break because it doesnt check for taskQ.length >0
     var taskProm = new Promise(function(resolve, reject) {
@@ -282,7 +315,6 @@ function operate(unitId, rw, reg,ops){
       });
     });
     taskQ.push(taskProm);
-    console.log('append',taskQ);
     return taskProm;
   }else{
     return new Promise((res,rej)=>{
@@ -316,7 +348,6 @@ function operate(unitId, rw, reg,ops){
               },(fail)=>{//could connect, modbus error
                 fp.close();
                 fp.once('close',()=>{
-                    console.log(fp.getStatus());
                     console.log('read',fail);
                     rej(fail);
                 });
@@ -343,4 +374,33 @@ function operate(unitId, rw, reg,ops){
 
   });
 }
+}
+
+function setFireplaceSettings(device_data){
+  console.log('setting data');
+  let setts = {};
+  let pArray = [];
+  pArray.push(operate(device_data.unitId,'read', FIREPLACE_STATUS_REG));
+  pArray.push(operate(device_data.unitId,'read', FAULT_DETAIL_REG));
+  pArray.push(operate(device_data.unitId,'read', ROOM_TEMPERATURE_REG));
+  //pArray.push(operate(unitId,'read', RSSI_GATEWAY_REG));
+
+  return Promise.all(pArray).then(setArray =>{
+    //console.log(setArray);
+    let statusReg = setArray[0];
+    let faultNumber = setArray[1];
+    (statusReg & 1) ? (setts.fault = 'Fault '+faultNumber) : setts.fault = 'No faults';
+    (statusReg & 2) ? setts.pilot = "on" : setts.pilot = "off";
+    (statusReg & 4) ? setts.main = "on" : setts.main = "off";
+    (statusReg & 8) ? setts.secondary = "on" : setts.secondary = "off";
+    (statusReg & 256) ? setts.light = "on" : setts.light = "off";
+    (statusReg & 2048) ? setts.rcbound = "connected" : setts.rcbound="disconnected";
+
+    (setArray[2] < 700) ? setts.temperature = (setArray[2]/10).toString() :
+    //console.log(setts);
+    module.exports.setSettings(device_data,setts);
+    //console.log(setArray);
+  },fail =>{
+    console.log('me no set status', fail);
+  });
 }

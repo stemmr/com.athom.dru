@@ -256,18 +256,24 @@
                   }
                 },
                 {
-                  "id":"toggle",
-                  "capabilities":["onoff.main"],
+                  "id":"ternary",
+                  "capabilities":["flame_enum"],
+
                   "options":{
-                    "showTitle":true
+                    "icons":{
+                      "top":false,
+                      "middle":false,
+                      "bottom":false
+                    },
+                    "values":{
+                      "top":"both",
+                      "middle":"off",
+                      "bottom":"single"
+                    }
                   }
-                },
-                {
-                  "id":"toggle",
-                  "capabilities":["onoff.secondary"],
-                  "options":{
-                    "showTitle":true
-                  }
+                },{
+                  "id":"slider",
+                  "capabilities":["flame_height"]
                 }
               ]
             },
@@ -289,7 +295,7 @@
                   "id":"checkfail"
                 }
             ],
-            "capabilities":["onoff.light","onoff.main","onoff.secondary","flame_height"],
+            "capabilities":["onoff.light","onoff.main","onoff.secondary","flame_height","flame_enum"],
             "settings":[
                 {
                   "type":"group",
@@ -300,12 +306,93 @@
                   "children":[
                       {
                         "id":"rssi",
-                        "type":"number",
+                        "type": "label",
                         "label":{
                           "en":"RSSI",
                           "nl":"RSSI"
                         },
-                        "value": 0
+                        "value":"-"
+                      },
+                      {
+                        "id":"fault",
+                        "type": "label",
+                        "label":{
+                          "en":"Fault",
+                          "nl":"Defect"
+                        },
+                        "value":"-"
+                      },
+                      {
+                        "id":"fault",
+                        "type": "label",
+                        "label":{
+                          "en":"Fault",
+                          "nl":"Defect"
+                        },
+                        "value":"-"
+                      },
+                      {
+                        "id":"rcbound",
+                        "type": "label",
+                        "label":{
+                          "en":"Remote connected",
+                          "nl":"Afstandsbediening"
+                        },
+                        "value":"-"
+                      },
+                      {
+                        "id":"temperature",
+                        "type": "label",
+                        "label":{
+                          "en":"temperature",
+                          "nl":"temperatuur"
+                        },
+                        "value":"-"
+                      },
+                      {
+                        "id":"light",
+                        "type": "label",
+                        "label":{
+                          "en":"Lights",
+                          "nl":"Lichten"
+                        },
+                        "value":"-"
+                      },
+                      {
+                        "id":"main",
+                        "type": "label",
+                        "label":{
+                          "en":"Main flame",
+                          "nl":"Hoofdvlam"
+                        },
+                        "value":"-"
+                      },
+                      {
+                        "id":"secondary",
+                        "type": "label",
+                        "label":{
+                          "en":"Secondary",
+                          "nl":"Secundaire"
+                        },
+                        "value":"-"
+                      },
+                      {
+                        "id":"pilot",
+                        "type": "label",
+                        "label":{
+                          "en":"Pilot",
+                          "nl":"Waakvlam"
+                        },
+                        "value":"-"
+                      },
+                      {
+                        "id":"flame_possible",
+                        "type": "label",
+                        "label":{
+                          "en":"set flame",
+                          "nl":"Vlam aanzetten"
+                        },
+                        "value":"-"
                       }
                   ]
                 },
@@ -331,7 +418,40 @@
         }
     ],
     "capabilities":{
-
+      "flame_enum":{
+        "type":"enum",
+        "title":{
+          "en":"flame status",
+          "nl":"vlammen status"
+        },
+        "desc":{
+          "en":"Turn flame off, low or high",
+          "nl":"zet vlammen uit, laag of hoog"
+        },
+        "values":[
+          {
+            "id":"both",
+            "title":{
+              "en":"Both flames on",
+              "nl":"Beide vlammen aan"
+            }
+          },{
+            "id":"off",
+            "title":{
+              "en":"turn flames off",
+              "nl":"zet vlammen uit"
+            }
+          },{
+            "id":"single",
+            "title":{
+              "en":"Only turn main on",
+              "nl":"Zet alleen hoofdvlam aan"
+            }
+          }
+        ],
+        "getable":true,
+        "setable":true
+      },
       "flame_height":{
         "type":"number",
         "decimals":0,
@@ -346,7 +466,7 @@
       }
     },
     "capabilitiesOptions":{
-      "onoff":{
+      "onoff.light":{
         "title":{
           "en":"Light",
           "nl":"Licht"

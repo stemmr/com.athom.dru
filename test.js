@@ -1,14 +1,14 @@
-var mdns = require('mdns-js');
-//if you have another mdns daemon running, like avahi or bonjour, uncomment following line
-//mdns.excludeInterface('0.0.0.0');
+"use strict";
 
-var browser = mdns.createBrowser('_modbus._tcp.local');
-console.log(browser);
+let p = {}
+p.inte = setInterval(function () {
+  console.log('diswork');
+}, 1000);
 
-browser.on('ready', function () {
-    browser.discover();
-});
-
-browser.on('update', function (data) {
-    console.log('data:', data);
-});
+setTimeout(function () {
+    console.log(p);
+    clearInterval(p.inte);
+    console.log(p);
+    delete p.inte;
+    console.log(p)
+}, 5000);

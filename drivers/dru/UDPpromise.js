@@ -28,7 +28,6 @@ let ipAwait = function(){
   });
 
   server.on('message', (msg, rinfo) => {
-  	//console.log(rinfo);
   	if(msg.toString().indexOf('HWBRDG-DF') !== -1 ){
 
   		if(ipArray.indexOf(rinfo.address) === -1){
@@ -40,7 +39,6 @@ let ipAwait = function(){
 
   server.on('listening', () => {
   	var address = server.address();
-  	console.log(`server listening ${address.address}:${address.port}`);
   });
 
   server.bind(35353);

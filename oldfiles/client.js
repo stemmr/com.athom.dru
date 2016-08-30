@@ -7,23 +7,22 @@ let client = modbus.client.tcp.complete({
   autoReconnect: false,
   reconnectTimeout: 1000,
   timeout: 5000,
-  unitId: 1
+  unitId: 2
 });
-
-setInterval(()=>{
-  console.log(client.getState());
-},5);
 
 client.connect();
 
 client.on('connect',()=>{
-  client.readHoldingRegisters(40200,1).then((res)=>{
+  console.log('conn');
+  client.readHoldingRegisters(40600,20).then((res)=>{
     console.log(res);
   });
 });
 
 client.on('close',()=>{
-  setTimeout(function () {
 
-  }, 2000);
+});
+
+client.on('error',(err)=>{
+  console.log(err);
 });
