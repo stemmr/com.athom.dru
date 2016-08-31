@@ -257,7 +257,7 @@
                   "id":"toggle",
                   "capabilities":["onoff.light"],
                   "options":{
-                    "showTitle":true
+                    "showTitle":false
                   }
                 },
                 {
@@ -317,8 +317,8 @@
                         "id":"rssi_gateway",
                         "type": "label",
                         "label":{
-                          "en":"RSSI",
-                          "nl":"RSSI"
+                          "en":"Gateway signal",
+                          "nl":"Signaal gateway"
                         },
                         "value":"-"
                       },
@@ -326,26 +326,8 @@
                         "id":"rssi_dfgt",
                         "type": "label",
                         "label":{
-                          "en":"remote signal",
-                          "nl":"signaal afstandsbediening"
-                        },
-                        "value":"-"
-                      },
-                      {
-                        "id":"fault",
-                        "type": "label",
-                        "label":{
-                          "en":"Fault",
-                          "nl":"Defect"
-                        },
-                        "value":"-"
-                      },
-                      {
-                        "id":"fault",
-                        "type": "label",
-                        "label":{
-                          "en":"Fault",
-                          "nl":"Defect"
+                          "en":"Remote signal",
+                          "nl":"Signaal afstandsbediening"
                         },
                         "value":"-"
                       },
@@ -362,8 +344,8 @@
                         "id":"temperature",
                         "type": "label",
                         "label":{
-                          "en":"temperature",
-                          "nl":"temperatuur"
+                          "en":"Temperature",
+                          "nl":"Temperatuur"
                         },
                         "value":"-"
                       },
@@ -407,7 +389,7 @@
                         "id":"flame_possible",
                         "type": "label",
                         "label":{
-                          "en":"set flame",
+                          "en":"Set flame",
                           "nl":"Vlam aanzetten"
                         },
                         "value":"-"

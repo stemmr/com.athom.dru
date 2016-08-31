@@ -329,19 +329,21 @@ function operate(unitId, rw, reg,ops){
       fp.once('connect',()=>{
         fp.readHoldingRegisters(FIREPLACE_STATUS_REG,1).then((status)=>{
           if(status.register[0] & 1){
-            //FAULT
-            fp.writeSingleRegister(FIREPLACE_ACTION_REG, 1000).then(()=>{
+            //FAULT make this 1000 to automatically handle faults
+            fp.writeSingleRegister(FIREPLACE_ACTION_REG, 0).then(()=>{
               fp.readHoldingRegisters(FIREPLACE_STATUS_REG,1).then((fres)=>{
-                if(fres.register[0]&1){
-                  fp.close().once('close',()=>{
-                      rej(new Error('Could not resolve fault'));
-                  });
-                  //you're screwed
-                }else{
-                  fp.close().once('close',()=>{
-                    rej(new Error('Resolved Fault, retry command'));
-                  });
-                }
+                  if(fres.register[0]&1){
+                    fp.close().once('close',()=>{
+                      rej(new Error('You must manually resolve the fault'));
+                      //manually resolve fault
+                    });
+
+                  }else{//should not happen
+                    fp.close().once('close',()=>{
+                      rej(new Error('Resolved Fault, retry command'));
+                    });
+                  }
+
               });
             });
           }else{
@@ -394,10 +396,11 @@ function setFireplaceSettings(device_data){
   pArray.push(operate(device_data.unitId,'read', RSSI_DFGT_REG));//4
 
   return Promise.all(pArray).then(setArray =>{
-    //console.log(setArray);
+    console.log(setArray);
     let statusReg = setArray[0];
     let faultNumber = setArray[1];
-    setts.fault = (statusReg & 1) ? ('Fault '+faultNumber) : 'No faults';
+    //setts.fault = (statusReg & 1) ? ('Fault '+ faultNumber) : 'No faults';
+    //Have removed automatic fault handling until I can better support it
     setts.pilot = (statusReg & 2) ? "on" : "off";
     setts.main = (statusReg & 4) ? "on" : "off";
     setts.secondary = (statusReg & 8) ? "on" : "off";
@@ -409,8 +412,18 @@ function setFireplaceSettings(device_data){
     //console.log(setArray);
 
     //multiply by -0.5 according to docs
-    setts.rssi_gateway = (-0.5*setArray[3]).toString();
-    setts.rssi_dfgt = (-0.5*setArray[4]).toString();
+    let gwRSSI = -0.5*setArray[3];
+    if(gwRSSI > -55) setts.rssi_gateway = 'very good';
+    else if(gwRSSI > -70) setts.rssi_gateway = "good";
+    else if(gwRSSI > -80) setts.rssi_gateway = "bad";
+    else if(gwRSSI < -80) setts.rssi_gateway = "very bad";
+
+    let dfgtRSSI = -0.5*setArray[4];
+    if(dfgtRSSI > -55) setts.rssi_dfgt = 'very good';
+    else if(dfgtRSSI > -70) setts.rssi_dfgt = "good";
+    else if(dfgtRSSI > -80) setts.rssi_dfgt = "bad";
+    else if(dfgtRSSI < -80) setts.rssi_dfgt = "very bad";
+
     module.exports.setSettings(device_data, setts);
     //console.log(setArray);
   },fail =>{

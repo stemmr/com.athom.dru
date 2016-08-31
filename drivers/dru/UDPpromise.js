@@ -3,7 +3,6 @@ const dgram = require('dgram');
 const server = dgram.createSocket('udp4');
 let mdns = require('mdns-js');
 
-//add try/catch block in case of failure
 let ipArray = [];
 
 let ipAwait = function(){
